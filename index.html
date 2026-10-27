@@ -590,14 +590,66 @@ textarea.form-input{resize:vertical}
 /* المفضلة */
 .rc-fav{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;border:0;background:rgba(0,0,0,.35);color:#fff;cursor:pointer;margin-inline-end:6px;vertical-align:middle}
 .rc-fav.on{color:#f43f5e;background:rgba(244,63,94,.22)}
+/* الشعار */
+.logo-img{width:76px;height:76px;margin:0 auto 14px;border-radius:22px;display:block;object-fit:cover;box-shadow:var(--glow)}
+.brand-logo{width:38px;height:38px;border-radius:12px;display:block;object-fit:cover;box-shadow:var(--glow)}
+/* مشغل الرسالة الصوتية */
+.vm{display:flex;align-items:center;gap:10px;min-width:210px;padding:8px 10px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid var(--border)}
+.vm audio{display:none}
+.vm-play{width:36px;height:36px;border-radius:50%;border:0;background:var(--grad);color:#fff;display:grid;place-items:center;cursor:pointer;flex-shrink:0}
+.vm-track{flex:1;height:6px;border-radius:6px;background:rgba(255,255,255,.18);position:relative;cursor:pointer}
+.vm-fill{position:absolute;inset-inline-start:0;top:0;bottom:0;width:0;border-radius:6px;background:var(--grad)}
+.vm-time{font-size:12px;color:#cfd2e6;font-variant-numeric:tabular-nums;min-width:34px;text-align:center}
+/* حالة التسجيل */
+.mic-btn.recording{box-shadow:0 0 0 6px rgba(244,63,94,.25)}
+/* مقدمة التطبيق */
+.intro-splash{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(circle at 50% 35%,#2a1a52 0%,#0c0a18 55%,#05050a 100%);transition:opacity .6s ease,visibility .6s;}
+.intro-splash.out{opacity:0;visibility:hidden;}
+.intro-glow{position:absolute;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(192,38,211,.45),rgba(124,58,237,.18) 45%,transparent 70%);filter:blur(10px);animation:introGlow 2.4s ease-in-out infinite alternate;}
+.intro-inner{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px;}
+.intro-logo{width:132px;height:132px;border-radius:34px;object-fit:cover;box-shadow:0 0 0 1px rgba(255,255,255,.08),0 0 40px rgba(192,38,211,.55),0 0 90px rgba(124,58,237,.35);animation:introPop .9s cubic-bezier(.2,.9,.25,1.2) both;}
+.intro-name{margin-top:22px;font-size:46px;font-weight:900;letter-spacing:6px;background:linear-gradient(135deg,#c4b5fd,#e879f9 55%,#f472b6);-webkit-background-clip:text;background-clip:text;color:transparent;animation:introRise .9s .25s ease both;}
+.intro-tag{margin-top:8px;font-size:15px;color:#cfd2e6;font-weight:700;animation:introRise .9s .45s ease both;}
+.intro-bar{margin-top:30px;width:150px;height:4px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden;animation:introRise .6s .6s ease both;}
+.intro-bar span{display:block;height:100%;width:0;border-radius:4px;background:linear-gradient(90deg,#7c3aed,#c026d3,#ec4899);animation:introLoad 2.1s .6s ease forwards;}
+@keyframes introPop{from{opacity:0;transform:scale(.6) rotate(-14deg)}to{opacity:1;transform:scale(1) rotate(-4deg)}}
+@keyframes introRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes introLoad{from{width:0}to{width:100%}}
+@keyframes introGlow{from{transform:scale(.9);opacity:.7}to{transform:scale(1.12);opacity:1}}
+@media (prefers-reduced-motion: reduce){.intro-splash *,.intro-splash{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
+<div id="introSplash" class="intro-splash" aria-hidden="true">
+  <div class="intro-glow"></div>
+  <div class="intro-inner">
+    <img class="intro-logo" src="logo.png" alt="WASL">
+    <div class="intro-name">WASL</div>
+    <div class="intro-tag">تواصل مع من تحب بأمان 💜</div>
+    <div class="intro-bar"><span></span></div>
+  </div>
+</div>
+<script>
+(function(){
+  var el = document.getElementById('introSplash');
+  if (!el) return;
+  var start = Date.now();
+  function hide(){
+    var wait = Math.max(0, 2600 - (Date.now() - start));
+    setTimeout(function(){
+      el.classList.add('out');
+      setTimeout(function(){ el.remove(); }, 600);
+    }, wait);
+  }
+  if (document.readyState === 'complete') hide(); else window.addEventListener('load', hide);
+  setTimeout(function(){ if (document.getElementById('introSplash')) { el.classList.add('out'); setTimeout(function(){ el.remove(); }, 600); } }, 5000);
+})();
+</script>
 
 <!-- ================= AUTH ================= -->
 <div id="authScreen" class="auth-screen">
   <div class="auth-box">
-    <div class="logo-mark">و</div>
+    <img class="logo-img" src="logo.png" alt="WASL">
     <h1>WASL</h1>
     <p class="tag">تواصل مع من تحب بأمان 💜</p>
     <div class="auth-tabs">
@@ -618,7 +670,7 @@ textarea.form-input{resize:vertical}
   <header class="app-header">
     <div class="header-inner">
       <div class="brand" onclick="document.querySelector('[data-page=home]').click()">
-        <div class="brand-icon">و</div><span class="brand-text">WASL</span>
+        <img class="brand-logo" src="logo.png" alt=""><span class="brand-text">WASL</span>
       </div>
       <button class="search-pill" onclick="openSearchModal()"><i data-ico="search" data-s="18"></i><span>ابحث عن أصدقاء…</span></button>
       <div class="header-actions">
@@ -742,6 +794,8 @@ const ICONS = {
   camera:'<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
   grid:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
   check:'<polyline points="20 6 9 17 4 12"/>',
+  play:'<polygon points="6 4 20 12 6 20 6 4"/>',
+  pause:'<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>',
   settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
   mutemic:'<line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/>',
   camoff:'<path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"/><line x1="1" y1="1" x2="23" y2="23"/>'
@@ -955,7 +1009,7 @@ window.openChat = async (uid, el) => {
     if (!msgs.length) { $('chatMsgs').innerHTML = `<div class="chat-placeholder">${emptyHtml('msg', 'لا رسائل بعد — قل مرحباً 👋')}</div>`; return; }
     $('chatMsgs').innerHTML = msgs.map(m => {
       let contentHTML = esc(m.content);
-      if (m.content.startsWith('AUDIO_URL::')) contentHTML = `<audio controls src="${m.content.replace('AUDIO_URL::', '')}"></audio>`;
+      if (m.content.startsWith('AUDIO_URL::')) contentHTML = `<div class="vm" oncontextmenu="return false"><button class="vm-play" onclick="vmToggle(this)" aria-label="تشغيل">${ico('play', 14)}</button><div class="vm-track" onclick="vmSeek(event, this)"><span class="vm-fill"></span></div><span class="vm-time">0:00</span><audio src="${m.content.replace('AUDIO_URL::', '')}" preload="metadata" controlsList="nodownload noplaybackrate" ontimeupdate="vmTick(this)" onloadedmetadata="vmTick(this)" onended="vmEnd(this)"></audio></div>`;
       return `
       <div class="msg-bubble ${m.sender_id === me.id ? 'me' : 'them'}">
         ${contentHTML}
@@ -989,6 +1043,49 @@ window.sendMessage = async () => {
   if (error) { toast('فشل حفظ الرسالة: ' + error.message); $('chatInput').value = val; }
 };
 window.sendQuickReply = (text) => { $('chatInput').value = text; $('chatSend').click(); };
+
+const vmFmt = t => { t = Math.max(0, Math.floor(t || 0)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
+window.vmToggle = (btn) => {
+  const box = btn.closest('.vm'); const a = box?.querySelector('audio'); if (!a) return;
+  document.querySelectorAll('.vm audio').forEach(x => { if (x !== a) x.pause(); });
+  if (a.paused) a.play().catch(() => toast('تعذر تشغيل الرسالة الصوتية')); else a.pause();
+  btn.innerHTML = a.paused ? ico('play', 14) : ico('pause', 14);
+};
+window.vmTick = (a) => {
+  const box = a.closest('.vm'); if (!box) return;
+  const pct = a.duration ? (a.currentTime / a.duration) * 100 : 0;
+  box.querySelector('.vm-fill').style.width = pct + '%';
+  box.querySelector('.vm-time').textContent = vmFmt(a.paused && !a.currentTime ? a.duration : a.currentTime);
+};
+window.vmSeek = (e, track) => {
+  const a = track.closest('.vm')?.querySelector('audio'); if (!a || !a.duration) return;
+  const r = track.getBoundingClientRect();
+  const ratio = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+  a.currentTime = ratio * a.duration;
+};
+window.vmEnd = (a) => {
+  const box = a.closest('.vm'); if (!box) return;
+  box.querySelector('.vm-fill').style.width = '0%';
+  box.querySelector('.vm-play').innerHTML = ico('play', 14);
+  box.querySelector('.vm-time').textContent = vmFmt(a.duration);
+};
+
+// صوت تنبيه داخل التطبيق عند وصول إشعار والتطبيق مفتوح
+window.playNotifySound = () => {
+  try {
+    const ctx = window.__notifyCtx || (window.__notifyCtx = new (window.AudioContext || window.webkitAudioContext)());
+    if (ctx.state === 'suspended') ctx.resume();
+    [[880, 0], [1320, 0.14]].forEach(([f, t]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, ctx.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + 0.22);
+      o.connect(g).connect(ctx.destination);
+      o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.25);
+    });
+  } catch (e) {}
+};
 
 window.toggleRecording = async () => {
   const micBtn = $('micBtn');
@@ -2916,6 +3013,7 @@ if ('serviceWorker' in navigator) {
     const m = e.data || {};
     if (m.type === 'push-nav') handlePushNav(m.data);
     if (m.type === 'push-received') {
+      playNotifySound();
       const d = m.data || {};
       if (d.type === 'message' && d.from === currentChatUser) return; // المحادثة مفتوحة أمامك
       toast(`${m.title}: ${m.body}`);
