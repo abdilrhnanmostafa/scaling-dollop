@@ -579,6 +579,17 @@ textarea.form-input{resize:vertical}
 .rs-file input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .rs-stop{height:46px;padding:0 16px;border-radius:14px;border:1px solid rgba(244,63,94,.5);background:transparent;color:#fda4af;font-weight:800;font-family:inherit;cursor:pointer}
 .rs-note{font-size:12.5px;color:#9ca0bd;margin:10px 0 4px;min-height:16px;text-align:center}
+/* محادثة الغرفة الصوتية */
+.rv-chat{max-height:20vh;overflow-y:auto;padding:4px 18px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.rc-msg{background:rgba(255,255,255,.09);border-radius:14px;padding:7px 12px;font-size:13.5px;max-width:85%;word-break:break-word}
+.rc-msg b{color:#e9d5ff}
+.rc-msg.mine{background:rgba(192,38,211,.28);align-self:flex-end}
+.rv-chatbar{display:flex;gap:8px;padding:6px 16px 0}
+.rv-chatbar input{flex:1;height:42px;border-radius:14px;border:1px solid var(--border-2);background:rgba(0,0,0,.4);color:#fff;padding:0 14px;font-family:inherit;font-size:14px}
+.rv-chatbar button{height:42px;padding:0 16px;border-radius:14px;border:0;background:var(--grad);color:#fff;font-weight:800;font-family:inherit;cursor:pointer}
+/* المفضلة */
+.rc-fav{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;border:0;background:rgba(0,0,0,.35);color:#fff;cursor:pointer;margin-inline-end:6px;vertical-align:middle}
+.rc-fav.on{color:#f43f5e;background:rgba(244,63,94,.22)}
 </style>
 </head>
 <body>
@@ -1926,6 +1937,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 Object.assign(ICONS, { crown: '<path d="M2 8l5 4 5-7 5 7 5-4-2.5 11h-15z"/>' });
 
 let roomFilter = 'all', roomsCache = [], crCover = 0, rv = null;
+let myFavs = new Set();
 const roomWatchers = new Map(), roomPresence = new Map();
 
 const coverOf = r => ROOM_COVERS[(r.cover_idx || 0) % ROOM_COVERS.length];
@@ -1969,6 +1981,7 @@ async function renderRoomsPage() {
     <div class="friends-tabs">
       <div class="friends-tab ${roomFilter === 'all' ? 'active' : ''}" onclick="setRoomFilter('all', this)">كل الغرف</div>
       <div class="friends-tab ${roomFilter === 'premium' ? 'active' : ''}" onclick="setRoomFilter('premium', this)">${ico('crown', 14)} المميزة</div>
+      <div class="friends-tab ${roomFilter === 'fav' ? 'active' : ''}" onclick="setRoomFilter('fav', this)">${ico('heart', 14)} المفضلة</div>
     </div>
     <div class="rooms-grid" id="roomsGrid">${loaderHtml}</div>`;
   await loadRooms();
@@ -1985,6 +1998,8 @@ async function loadRooms() {
   if (!$('roomsGrid')) return;
   if (error) { $('roomsGrid').innerHTML = emptyHtml('mic', 'تعذر تحميل الغرف: ' + esc(error.message)); return; }
   roomsCache = data || [];
+  const { data: fv } = await supabaseClient.from('room_favorites').select('room_id').eq('user_id', me.id);
+  myFavs = new Set((fv || []).map(x => x.room_id));
   const oids = [...new Set(roomsCache.map(r => r.owner_id))];
   if (oids.length) {
     const { data: ps } = await supabaseClient.from('profiles').select('*').in('id', oids);
@@ -1994,13 +2009,25 @@ async function loadRooms() {
   watchRooms();
 }
 
+window.toggleFav = async (roomId) => {
+  const was = myFavs.has(roomId);
+  const q = supabaseClient.from('room_favorites');
+  const { error } = was
+    ? await q.delete().eq('user_id', me.id).eq('room_id', roomId)
+    : await q.insert({ user_id: me.id, room_id: roomId });
+  if (error) return toast('تعذر الحفظ: ' + error.message);
+  if (was) myFavs.delete(roomId); else myFavs.add(roomId);
+  toast(was ? 'أُزيلت من المفضلة' : 'أُضيفت إلى المفضلة ⭐');
+  drawRooms();
+};
+
 function drawRooms() {
   const grid = $('roomsGrid'); if (!grid) return;
   const list = roomsCache
-    .filter(r => roomFilter !== 'premium' || r.is_premium)
-    .sort((a, b) => Number(b.is_premium) - Number(a.is_premium));
+    .filter(r => roomFilter === 'fav' ? myFavs.has(r.id) : (roomFilter !== 'premium' || r.is_premium))
+    .sort((a, b) => (Number(myFavs.has(b.id)) - Number(myFavs.has(a.id))) || (Number(b.is_premium) - Number(a.is_premium)));
   if (!list.length) {
-    grid.innerHTML = emptyHtml('mic', roomFilter === 'premium' ? 'لا توجد غرف مميزة الآن.' : 'لا توجد غرف بعد — افتح أول غرفة!');
+    grid.innerHTML = emptyHtml('mic', roomFilter === 'fav' ? 'لا توجد غرف في المفضلة بعد.' : roomFilter === 'premium' ? 'لا توجد غرف مميزة الآن.' : 'لا توجد غرف بعد — افتح أول غرفة!');
     return;
   }
   grid.innerHTML = list.map(roomCardHtml).join('');
@@ -2013,7 +2040,7 @@ function roomCardHtml(r) {
   <article class="room-card${r.is_premium ? ' premium' : ''}" style="--cover:${coverOf(r)}" onclick="joinRoom('${r.id}')">
     <div class="rc-cover">
       ${r.is_premium ? `<span class="rc-premium">${ico('crown', 13)} مميزة</span>` : '<span></span>'}
-      <span class="rc-count">${ico('users', 14)} <b id="cnt-${r.id}">${mem.length}</b></span>
+      <span class="rc-count"><button class="rc-fav${myFavs.has(r.id) ? ' on' : ''}" onclick="event.stopPropagation();toggleFav('${r.id}')" title="المفضلة">${ico('heart', 15)}</button>${ico('users', 14)} <b id="cnt-${r.id}">${mem.length}</b></span>
     </div>
     <div class="rc-body">
       <h3>${esc(r.title)}${r.is_verified ? ' <span class="verified-badge"></span>' : ''}</h3>
@@ -2118,6 +2145,7 @@ window.joinRoom = async (roomId) => {
 
   rv = { room, ch: null, pcs: new Map(), audios: new Map(), pending: new Map(), stream: null,
          muted: forced, forcedMute: forced, speaking: false, members: [], vad: null, actx: null, lastTrack: 0, subscribed: false };
+  roomChatMsgs = [];
   renderRoomView();
   supabaseClient.from('voice_rooms').select('title, background_key, music_url, music_started_at').eq('id', room.id).maybeSingle()
     .then(({ data: fresh }) => { if (fresh && rv && rv.room.id === room.id) applyRoomState(fresh); });
@@ -2143,6 +2171,7 @@ function connectRoomChannel() {
     .on('broadcast', { event: 'closed' }, () => { if (rv === st) { toast('أغلق المالك الغرفة'); leaveRoom(); } })
     .on('broadcast', { event: 'mod' }, ({ payload }) => { if (rv === st) onModEvent(payload); })
     .on('broadcast', { event: 'room' }, ({ payload }) => { if (rv === st && st.room.owner_id !== me.id) applyRoomState(payload); })
+    .on('broadcast', { event: 'chat' }, ({ payload }) => { if (rv === st) addRoomChat(payload); })
     .subscribe(status => { if (status === 'SUBSCRIBED' && rv === st) { st.subscribed = true; trackMe(); } });
 }
 
@@ -2253,6 +2282,28 @@ window.stopRoomMusic = async () => {
   if ($('rsMusicNote')) $('rsMusicNote').textContent = 'لا توجد موسيقى قيد التشغيل';
   toast('تم إيقاف الموسيقى');
 };
+
+let roomChatMsgs = [];
+window.sendRoomChat = (e) => {
+  e.preventDefault();
+  const inp = $('rvChatIn');
+  const text = (inp?.value || '').trim();
+  if (!text || !rv?.ch) return;
+  const msg = { uid: me.id, name: me.full_name || 'مستخدم', text, t: Date.now() };
+  rv.ch.send({ type: 'broadcast', event: 'chat', payload: msg });
+  addRoomChat(msg);
+  inp.value = '';
+};
+function addRoomChat(m) {
+  if (!rv) return;
+  roomChatMsgs = [...roomChatMsgs, m].slice(-40);
+  renderRoomChat();
+}
+function renderRoomChat() {
+  const box = $('rvChat'); if (!box) return;
+  box.innerHTML = roomChatMsgs.map(m => `<div class="rc-msg${m.uid === me.id ? ' mine' : ''}"><b>${esc(m.name)}</b> ${esc(m.text)}</div>`).join('');
+  box.scrollTop = box.scrollHeight;
+}
 
 window.leaveRoom = async () => {
   if (!rv) return;
@@ -2442,10 +2493,14 @@ function renderRoomView() {
         <div class="rv-title"><h3 id="rvTitle"></h3><span id="rvSub"></span></div>
         <button class="rv-btn hidden" id="rvSetBtn" onclick="openRoomSettings()" title="إعدادات الغرفة">${ico('settings', 18)}</button>
         <button class="rv-btn hidden" id="rvBansBtn" onclick="openBanList()" title="المحظورون">${ico('shield', 18)}</button>
-        <button class="rv-btn danger hidden" id="rvCloseBtn" onclick="closeRoomAsOwner()" title="إغلاق الغرفة">${ico('x', 18)}</button>
       </header>
       <div class="rv-seats" id="rvSeats"></div>
       <div class="rv-listeners" id="rvListeners"></div>
+      <div class="rv-chat" id="rvChat"></div>
+      <form class="rv-chatbar" onsubmit="sendRoomChat(event)">
+        <input id="rvChatIn" maxlength="200" placeholder="اكتب رسالة للغرفة..." autocomplete="off">
+        <button type="submit">إرسال</button>
+      </form>
       <div class="rv-bar">
         <div class="rv-micwrap">
           <button class="rv-mic" id="rvMic" onclick="toggleRoomMic()"></button>
@@ -2460,7 +2515,6 @@ function renderRoomView() {
   $('rvTitle').innerHTML = esc(r.title) + (r.is_verified ? ' <span class="verified-badge"></span>' : '');
   $('rvSetBtn')?.classList.toggle('hidden', r.owner_id !== me.id);
   $('rvSub').innerHTML = `${ico('users', 14)} ${rv.members.length} في الغرفة${r.is_premium ? ' · <b class="gold">مميزة</b>' : ''}`;
-  $('rvCloseBtn').classList.toggle('hidden', r.owner_id !== me.id);
   $('rvBansBtn').classList.toggle('hidden', r.owner_id !== me.id);
 
   $('rvSeats').innerHTML = Array.from({ length: ROOM_SEATS }, (_, i) => {
