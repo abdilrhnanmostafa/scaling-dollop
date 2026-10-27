@@ -678,9 +678,8 @@ const $ = id => document.getElementById(id);
 const SHIELD_IMG = 'https://l.top4top.io/p_3951xzwbq0.png';
 let me = null, selectedMediaFile = null, profileCache = {}, activeReels = [], currentChatUser = null;
 let messageChannel = null, currentPage = 'home';
-let peerConnection = null, localStream = null, mediaRecorder = null, audioChunks = [];
+let mediaRecorder = null, audioChunks = [];
 const postCache = {}, storyGroups = {};
-let incomingCall = null;
 
 // ================= ICONS =================
 const ICONS = {
@@ -941,7 +940,6 @@ window.openChat = async (uid, el) => {
     })
     .subscribe();
 
-  initCallChannel(uid);
 };
 
 window.sendMessage = async () => {
@@ -983,133 +981,233 @@ window.toggleRecording = async () => {
   } catch (err) { toast('يرجى السماح بالوصول للميكروفون.'); }
 };
 
-// ================= WEBRTC CALLS =================
+// ================= CALLS (مكالمات صوت وفيديو) =================
+// تسلسل المكالمة: ring ← ready ← offer ← answer ← end
+// كل الإشارات تمر عبر قنوات مشتركة (subscribed) وتُرسل بعد اكتمال ICE لتجنب فقدان المرشحين
+const RTC_CALL_CONFIG = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+  ]
+};
+let call = null, userCh = null;
+const pairIdOf = (a, b) => [a, b].sort().join('_');
+const descOf = pc => ({ type: pc.localDescription.type, sdp: pc.localDescription.sdp });
+
 function listenForIncomingCalls() {
-  supabaseClient.channel(`incoming-${me.id}`)
-    .on('broadcast', { event: 'offer' }, payload => { showIncomingCall(payload.payload, payload.payload.callerId); })
+  if (userCh) return;
+  userCh = supabaseClient.channel('user-' + me.id)
+    .on('broadcast', { event: 'ring' }, ({ payload }) => { if (payload.to === me.id) onRing(payload); })
     .subscribe();
 }
-let activeCallChannel = null;
-function initCallChannel(targetUid) {
-  if (activeCallChannel) supabaseClient.removeChannel(activeCallChannel);
-  const roomName = [me.id, targetUid].sort().join('-');
-  activeCallChannel = supabaseClient.channel(`call-${roomName}`);
-  activeCallChannel
-    .on('broadcast', { event: 'offer' }, payload => { showIncomingCall(payload.payload, targetUid); })
-    .on('broadcast', { event: 'answer' }, async payload => { if (peerConnection) await peerConnection.setRemoteDescription(new RTCSessionDescription(payload.payload)); })
-    .on('broadcast', { event: 'ice-candidate' }, payload => { if (peerConnection) peerConnection.addIceCandidate(new RTCIceCandidate(payload.payload)); })
-    .on('broadcast', { event: 'end-call' }, () => { endCall(); })
-    .subscribe();
+
+function openPairChannel(c) {
+  const ch = supabaseClient.channel('call-' + c.id);
+  ch.on('broadcast', { event: 'sig' }, ({ payload }) => { if (call === c) onSig(payload); })
+    .subscribe(status => {
+      if (status === 'SUBSCRIBED' && c.role === 'callee') {
+        // المستقبل يعلن جاهزيته مرات متكررة حتى تصل إشارة العرض (offer) لضمان عدم ضياع الرسالة
+        const beat = () => { if (call !== c || c.gotOffer) return; ch.send({ type: 'broadcast', event: 'sig', payload: { kind: 'ready' } }); c.readyTimer = setTimeout(beat, 1500); };
+        beat();
+      }
+    });
+  return ch;
+}
+
+function sendSig(c, payload) {
+  c.pairCh?.send({ type: 'broadcast', event: 'sig', payload });
+}
+
+async function onRing(p) {
+  if (call) return; // مشغول
+  call = { id: pairIdOf(me.id, p.from), peer: p.from, isVideo: !!p.isVideo, role: 'callee',
+           pc: null, stream: null, pairCh: null, accepted: false, answered: false, offer: null, muted: false, camOff: false };
+  const c = call;
+  if (!profileCache[p.from]) {
+    const { data } = await supabaseClient.from('profiles').select('*').eq('id', p.from).maybeSingle();
+    if (data) profileCache[data.id] = data;
+  }
+  showCallOverlay('مكالمة واردة…', profileCache[p.from] || { full_name: p.name || 'مستخدم' });
+  c.pairCh = openPairChannel(c);
+  c.timeout = setTimeout(() => { if (call === c && !c.accepted) { sendSig(c, { kind: 'end' }); endCall(false); } }, 45000);
 }
 
 window.startCall = async (isVideo) => {
   if (!currentChatUser) return toast('اختر محادثة أولاً');
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
-    setupPeerConnection();
-    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    activeCallChannel.send({ type: 'broadcast', event: 'offer', payload: { sdp: offer, isVideo, callerId: me.id } });
-    supabaseClient.channel(`incoming-${currentChatUser}`).send({ type: 'broadcast', event: 'offer', payload: { sdp: offer, isVideo, callerId: me.id } });
-    showCallUI(isVideo, true);
-  } catch (err) { toast('تعذر بدء المكالمة. تأكد من الصلاحيات والكاميرا.'); }
-};
-
-async function showIncomingCall(payload, callerId) {
-  incomingCall = { payload, callerId };
-  if (!profileCache[callerId]) {
-    const { data } = await supabaseClient.from('profiles').select('*').eq('id', callerId).maybeSingle();
-    if (data) profileCache[callerId] = data;
+  if (call) return toast('هناك مكالمة جارية بالفعل');
+  const peer = currentChatUser;
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideo }); }
+  catch (e) { return toast('تعذر الوصول للميكروفون أو الكاميرا. تأكد من الصلاحيات.'); }
+  call = { id: pairIdOf(me.id, peer), peer, isVideo: !!isVideo, role: 'caller', pc: null, stream,
+           pairCh: null, accepted: true, connected: false, muted: false, camOff: false };
+  const c = call;
+  if (!profileCache[peer]) {
+    const { data } = await supabaseClient.from('profiles').select('*').eq('id', peer).maybeSingle();
+    if (data) profileCache[data.id] = data;
   }
-  const caller = profileCache[callerId] || { full_name: 'مستخدم' };
-  $('modalRoot').innerHTML = `
-    <div class="incoming-call-modal">
-      ${avatarHtml({ ...caller, id: null })}
-      <h2 style="font-size:24px;font-weight:900">${esc(caller.full_name)}</h2>
-      <p class="muted">مكالمة ${payload.isVideo ? 'فيديو' : 'صوتية'} واردة…</p>
-      <div class="call-actions">
-        <button class="call-btn end" onclick="declineCall('${callerId}')">${ico('x', 26)}</button>
-        <button class="call-btn accept" onclick="acceptIncoming()">${ico('phone', 26)}</button>
-      </div>
-    </div>`;
-}
-window.acceptIncoming = () => { if (incomingCall) acceptCall(incomingCall.payload, incomingCall.callerId); };
-window.declineCall = (callerId) => {
-  $('modalRoot').innerHTML = '';
-  const roomName = [me.id, callerId].sort().join('-');
-  supabaseClient.channel(`call-${roomName}`).send({ type: 'broadcast', event: 'end-call' });
-};
-window.acceptCall = async (payload, callerId) => {
-  $('modalRoot').innerHTML = '';
-  currentChatUser = callerId;
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: payload.isVideo, audio: true });
-    setupPeerConnection();
-    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(payload.sdp));
-    const answer = await peerConnection.createAnswer();
-    await peerConnection.setLocalDescription(answer);
-    const roomName = [me.id, callerId].sort().join('-');
-    const ch = supabaseClient.channel(`call-${roomName}`);
-    ch.subscribe();
-    setTimeout(() => ch.send({ type: 'broadcast', event: 'answer', payload: answer }), 500);
-    showCallUI(payload.isVideo, true);
-  } catch (err) { toast('تعذر قبول المكالمة.'); }
-};
+  showCallOverlay('جارٍ الاتصال…', profileCache[peer] || { full_name: 'مستخدم' });
+  c.pairCh = openPairChannel(c);
+  c.timeout = setTimeout(() => { if (call === c && !c.connected) { toast('لم يرد المستخدم'); endCall(true); } }, 45000);
 
-function setupPeerConnection() {
-  peerConnection = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-  peerConnection.onicecandidate = event => {
-    if (event.candidate && currentChatUser) {
-      const roomName = [me.id, currentChatUser].sort().join('-');
-      supabaseClient.channel(`call-${roomName}`).send({ type: 'broadcast', event: 'ice-candidate', payload: event.candidate });
+  // إرسال إشعار الرنين عبر قناة المستخدم المستهدف
+  const ring = supabaseClient.channel('user-' + peer);
+  ring.subscribe(async status => {
+    if (status === 'SUBSCRIBED') {
+      await ring.send({ type: 'broadcast', event: 'ring', payload: { to: peer, from: me.id, isVideo: !!isVideo, name: me.full_name } });
+      setTimeout(() => supabaseClient.removeChannel(ring), 400);
     }
-  };
-  peerConnection.ontrack = event => {
-    const remoteVideo = document.getElementById('remoteVideo');
-    if (remoteVideo && remoteVideo.srcObject !== event.streams[0]) remoteVideo.srcObject = event.streams[0];
-    if (!remoteVideo) { let a = document.getElementById('remoteAudio'); if (!a) { a = document.createElement('audio'); a.id = 'remoteAudio'; a.autoplay = true; document.body.appendChild(a); } a.srcObject = event.streams[0]; }
-  };
+  });
+};
+
+async function onSig(p) {
+  const c = call; if (!c) return;
+  try {
+    if (p.kind === 'ready' && c.role === 'caller' && !c.offered) {
+      c.offered = true;
+      c.pc = makePC(c);
+      c.stream.getTracks().forEach(t => c.pc.addTrack(t, c.stream));
+      await c.pc.setLocalDescription(await c.pc.createOffer());
+      await waitIce(c.pc);
+      sendSig(c, { kind: 'offer', sdp: descOf(c.pc) });
+    } else if (p.kind === 'offer' && c.role === 'callee' && !c.gotOffer) {
+      c.gotOffer = true;
+      clearTimeout(c.readyTimer);
+      c.offer = p.sdp;
+      if (c.stream && !c.answered) await makeAnswer(c);
+    } else if (p.kind === 'answer' && c.role === 'caller' && c.pc) {
+      await c.pc.setRemoteDescription(p.sdp);
+    } else if (p.kind === 'end') {
+      endCall(false);
+      toast('انتهت المكالمة');
+    }
+  } catch (e) {
+    console.warn('call signal', e);
+    toast('تعذر إتمام المكالمة');
+    endCall(true);
+  }
 }
 
-function showCallUI(isVideo) {
-  const peer = profileCache[currentChatUser] || { full_name: 'مستخدم' };
-  $('modalRoot').innerHTML = `
-    <div class="call-modal" id="callModal">
-      <div class="call-video-container">
-        ${isVideo ? `<video id="remoteVideo" autoplay playsinline></video>` : `<div class="call-voice">${avatarHtml({ ...peer, id: null })}<h2 style="font-size:24px;font-weight:900">${esc(peer.full_name)}</h2><p class="muted">مكالمة صوتية جارية…</p></div>`}
-        <video id="localVideo" autoplay playsinline muted style="${isVideo ? '' : 'display:none;'}"></video>
-      </div>
-      <div class="call-controls">
-        <button class="call-btn" id="btnMute" onclick="toggleMute(this)">${ico('mic', 24)}</button>
-        ${isVideo ? `<button class="call-btn" onclick="toggleCam(this)">${ico('video', 24)}</button>` : ''}
-        <button class="call-btn end" onclick="endCall()">${ico('phone', 24)}</button>
-      </div>
-    </div>`;
-  const localVideo = document.getElementById('localVideo');
-  if (localVideo && localStream && isVideo) localVideo.srcObject = localStream;
+function makePC(c) {
+  const pc = new RTCPeerConnection(RTC_CALL_CONFIG);
+  pc.ontrack = e => {
+    const rv = $('callRemote');
+    if (rv) { rv.srcObject = e.streams[0]; rv.play?.().catch(() => {}); }
+    if (c.isVideo && $('callVoice')) $('callVoice').style.display = 'none';
+  };
+  pc.onconnectionstatechange = () => {
+    if (call !== c) return;
+    if (pc.connectionState === 'connected') { c.connected = true; setCallStatus('متصل'); }
+    if (pc.connectionState === 'failed') { toast('فشل الاتصال بين الجهازين'); endCall(true); }
+  };
+  return pc;
 }
-window.toggleMute = (btn) => {
-  if (!localStream) return;
-  const t = localStream.getAudioTracks()[0]; if (!t) return;
-  t.enabled = !t.enabled; btn.classList.toggle('off', !t.enabled); btn.innerHTML = ico(t.enabled ? 'mic' : 'mutemic', 24);
+
+function waitIce(pc) {
+  return new Promise(res => {
+    if (pc.iceGatheringState === 'complete') return res();
+    const t = setTimeout(res, 5000);
+    pc.addEventListener('icegatheringstatechange', () => {
+      if (pc.iceGatheringState === 'complete') { clearTimeout(t); res(); }
+    });
+  });
+}
+
+async function makeAnswer(c) {
+  c.answered = true;
+  c.pc = makePC(c);
+  c.stream.getTracks().forEach(t => c.pc.addTrack(t, c.stream));
+  await c.pc.setRemoteDescription(c.offer);
+  await c.pc.setLocalDescription(await c.pc.createAnswer());
+  await waitIce(c.pc);
+  sendSig(c, { kind: 'answer', sdp: descOf(c.pc) });
+}
+
+window.acceptCall = async () => {
+  const c = call; if (!c || c.role !== 'callee' || c.accepted) return;
+  c.accepted = true;
+  clearTimeout(c.timeout);
+  try { c.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: c.isVideo }); }
+  catch (e) { toast('تعذر الوصول للميكروفون أو الكاميرا'); return rejectCall(); }
+  setCallStatus('جارٍ الاتصال…');
+  showCallOverlay('جارٍ الاتصال…', profileCache[c.peer] || { full_name: 'مستخدم' });
+  if (c.offer) await makeAnswer(c);
 };
-window.toggleCam = (btn) => {
-  if (!localStream) return;
-  const t = localStream.getVideoTracks()[0]; if (!t) return;
-  t.enabled = !t.enabled; btn.classList.toggle('off', !t.enabled); btn.innerHTML = ico(t.enabled ? 'video' : 'camoff', 24);
+
+window.rejectCall = () => {
+  if (!call) return;
+  sendSig(call, { kind: 'end' });
+  endCall(false);
 };
-window.endCall = () => {
-  if (peerConnection) { peerConnection.close(); peerConnection = null; }
-  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-  const a = document.getElementById('remoteAudio'); if (a) a.remove();
-  $('modalRoot').innerHTML = '';
-  if (currentChatUser) {
-    const roomName = [me.id, currentChatUser].sort().join('-');
-    supabaseClient.channel(`call-${roomName}`).send({ type: 'broadcast', event: 'end-call' });
+
+window.endCall = (notify = true) => {
+  const c = call; if (!c) return;
+  if (notify && c.pairCh) sendSig(c, { kind: 'end' });
+  call = null;
+  clearTimeout(c.timeout);
+  clearTimeout(c.readyTimer);
+  c.pc?.close();
+  c.stream?.getTracks().forEach(t => t.stop());
+  if (c.pairCh) { const ch = c.pairCh; setTimeout(() => supabaseClient.removeChannel(ch), 400); }
+  $('callOverlay')?.remove();
+};
+
+function setCallStatus(t) { const el = $('callStatus'); if (el) el.textContent = t; }
+
+function showCallOverlay(status, peer) {
+  let el = $('callOverlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'callOverlay';
+    el.className = 'call-modal';
+    document.body.appendChild(el);
   }
+  const c = call;
+  const vid = c?.isVideo;
+  el.innerHTML = `
+    <div class="call-video-container">
+      <video id="callRemote" autoplay playsinline ${vid ? '' : 'style="display:none"'}></video>
+      <div class="call-voice" id="callVoice">
+        ${avatarHtml({ ...peer, id: null })}
+        <h2 style="font-size:24px;font-weight:900;margin-top:10px">${esc(peer.full_name || 'مستخدم')}</h2>
+        <p class="muted" id="callStatus">${esc(status)}</p>
+      </div>
+      <video id="callLocal" autoplay playsinline muted ${vid ? '' : 'style="display:none"'}></video>
+    </div>
+    <div class="call-controls" id="callControls"></div>`;
+  if (c?.stream && vid) { const lv = $('callLocal'); if (lv) lv.srcObject = c.stream; }
+  renderCallControls();
+}
+
+function renderCallControls() {
+  const box = $('callControls'); if (!box || !call) return;
+  if (call.role === 'callee' && !call.accepted) {
+    box.innerHTML = `
+      <button class="call-btn end" onclick="rejectCall()" title="رفض">${ico('x', 26)}</button>
+      <button class="call-btn accept" onclick="acceptCall()" title="قبول">${ico('phone', 26)}</button>`;
+    return;
+  }
+  box.innerHTML = `
+    <button class="call-btn ${call.muted ? 'off' : ''}" onclick="toggleMute()" title="كتم">${ico(call.muted ? 'mutemic' : 'mic', 24)}</button>
+    ${call.isVideo ? `<button class="call-btn ${call.camOff ? 'off' : ''}" onclick="toggleCam()" title="الكاميرا">${ico(call.camOff ? 'camoff' : 'video', 24)}</button>` : ''}
+    <button class="call-btn end" onclick="endCall(true)" title="إنهاء">${ico('phone', 24)}</button>`;
+}
+
+window.toggleMute = () => {
+  if (!call?.stream) return;
+  call.muted = !call.muted;
+  call.stream.getAudioTracks().forEach(t => (t.enabled = !call.muted));
+  renderCallControls();
 };
+window.toggleCam = () => {
+  if (!call?.stream) return;
+  call.camOff = !call.camOff;
+  call.stream.getVideoTracks().forEach(t => (t.enabled = !call.camOff));
+  renderCallControls();
+};
+
 
 // ================= FRIENDS =================
 async function renderFriendsPage() {
