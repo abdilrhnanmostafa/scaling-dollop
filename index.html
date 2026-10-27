@@ -2026,7 +2026,7 @@ window.joinRoom = async (roomId) => {
 
   const { data: myMod } = await supabaseClient.from('room_moderation').select('action').eq('room_id', room.id).eq('target_id', me.id);
   if (myMod?.some(r => r.action === 'ban')) return toast('أنت محظور من هذه الغرفة 🚫');
-  const forced = !!myMod?.some(r => r.action === 'mute');
+  const forced = !myProtected && !!myMod?.some(r => r.action === 'mute');
 
   stopRoomWatchers();          // نوقف مراقبة القائمة قبل الانضمام لنفس القناة
   await sleep(250);
@@ -2298,7 +2298,11 @@ function renderMicBtn() {
 }
 
 // ---------- الإشراف: طرد / حظر / كتم ----------
-const PROTECTED_MSG = 'لا يمكنك حظر أو كتم أو طرد صاحب التطبيق';
+const PROTECTED_MSGS = {
+  ban: 'لا يمكنك حظر صاحب التطبيق',
+  mute: 'لا يمكنك كتم صاحب التطبيق',
+  kick: 'لا يمكنك طرد صاحب التطبيق'
+};
 
 function showRoomSheet(inner) {
   closeRoomSheet();
@@ -2311,7 +2315,7 @@ function showRoomSheet(inner) {
 }
 window.closeRoomSheet = () => { $('modSheet')?.remove(); };
 
-function showProtectedNotice() {
+function showProtectedNotice(action = 'kick') {
   closeRoomSheet();
   const d = document.createElement('div');
   d.id = 'modSheet';
@@ -2320,7 +2324,7 @@ function showProtectedNotice() {
   d.innerHTML = `
     <div class="prot-card" onclick="event.stopPropagation()">
       <div class="prot-ico">${ico('shield', 28)}</div>
-      <p class="prot-msg">${PROTECTED_MSG}</p>
+      <p class="prot-msg">${PROTECTED_MSGS[action] || PROTECTED_MSGS.kick}</p>
       <button class="prot-btn" onclick="closeRoomSheet()">حسناً</button>
     </div>`;
   document.body.appendChild(d);
@@ -2334,6 +2338,7 @@ function sendMod(to, type) {
 // يستقبل المستخدم المستهدف الأمر من المالك فقط
 function onModEvent(p) {
   if (!rv || p.to !== me.id || p.from !== rv.room.owner_id) return;
+  if (myProtected && (p.type === 'kick' || p.type === 'mute')) return;
   if (p.type === 'kick') { toast('تم طردك من الغرفة'); leaveRoom(); return; }
   if (p.type === 'mute') { rv.forcedMute = true; applyMute(true); toast('كتمك صاحب الغرفة 🔇'); }
   if (p.type === 'unmute') { rv.forcedMute = false; applyMute(false); toast('تم رفع الكتم عنك'); }
@@ -2354,7 +2359,6 @@ window.openModerate = async (uid) => {
   if (!m) return;
   const { data: isProtected, error } = await supabaseClient.rpc('is_protected_user', { p_uid: uid });
   if (error) return toast('تعذر التحقق: ' + error.message);
-  if (isProtected) return showProtectedNotice();
   const { data: rows } = await supabaseClient.from('room_moderation')
     .select('action').eq('room_id', rv.room.id).eq('target_id', uid);
   const muted = !!rows?.some(r => r.action === 'mute');
@@ -2376,7 +2380,7 @@ window.modAct = async (action, uid) => {
     if (action === 'kick' || action === 'ban' || action === 'mute') {
       const { data: isProtected, error: pErr } = await supabaseClient.rpc('is_protected_user', { p_uid: uid });
       if (pErr) throw pErr;
-      if (isProtected) return showProtectedNotice();
+      if (isProtected) return showProtectedNotice(action);
     }
     if (action === 'kick') {
       sendMod(uid, 'kick');
@@ -2401,7 +2405,7 @@ window.modAct = async (action, uid) => {
       toast('تم رفع الحظر');
     }
   } catch (e) {
-    if (String(e.message || '').includes('PROTECTED_USER')) return showProtectedNotice();
+    if (String(e.message || '').includes('PROTECTED_USER')) return showProtectedNotice(action);
     return toast('تعذر تنفيذ الإجراء: ' + e.message);
   }
   if (action === 'unban') return openBanList();
@@ -2435,7 +2439,12 @@ window.openBanList = async () => {
 // ================= ADMIN (التوثيق والدروع) =================
 let isAdminMe = false, adminQuery = '', adminSearchTimer = null;
 
+let myProtected = false;
+async function checkProtectedMe() {
+  try { const { data } = await supabaseClient.rpc('is_protected_user', { p_uid: me.id }); myProtected = !!data; } catch (e) { myProtected = false; }
+}
 async function checkAdmin() {
+  checkProtectedMe();
   try {
     const { data } = await supabaseClient.rpc('is_app_admin', { p_uid: me.id });
     isAdminMe = !!data;
@@ -2480,7 +2489,7 @@ window.adminSearch = (v) => {
 async function loadAdminUsers(q = '') {
   const list = $('adminList'); if (!list) return;
   let query = supabaseClient.from('profiles')
-    .select('id, full_name, username, avatar_url, is_verified, frame, created_at')
+    .select('id, full_name, username, avatar_url, is_verified, frame, is_protected, created_at')
     .order('created_at', { ascending: false }).limit(100);
   if (q) query = query.or(`full_name.ilike.%${q}%,username.ilike.%${q}%`);
   const { data, error } = await query;
