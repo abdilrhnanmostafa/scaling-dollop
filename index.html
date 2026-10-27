@@ -1119,16 +1119,15 @@ const RTC_CALL_CONFIG = {
   iceTransportPolicy: 'all',
   bundlePolicy: 'max-bundle',
   iceServers: [
-    { urls: 'stun:stun.relay.metered.ca:80' },
-    { urls: 'turn:continue.metered.live:80', username: 'ca48fbf910d19aedd1f938eb', credential: '0M7OjkuXstJGmTyp' },
-    { urls: 'turn:continue.metered.live:443', username: 'ca48fbf910d19aedd1f938eb', credential: '0M7OjkuXstJGmTyp' },
-    { urls: 'turn:continue.metered.live:443?transport=tcp', username: 'ca48fbf910d19aedd1f938eb', credential: '0M7OjkuXstJGmTyp' },
-    { urls: 'turns:continue.metered.live:443?transport=tcp', username: 'ca48fbf910d19aedd1f938eb', credential: '0M7OjkuXstJGmTyp' }
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
   ]
 };
 // ضع اسم تطبيق Metered ومفتاح API هنا
 const METERED_HOST = 'continue.metered.live';
-const METERED_KEY = '';
+const METERED_KEY = 'oMUevTn313NszrRYsrq6vATBcLVAEeqi5FSWAmXMCFxzOpEC';
 async function fetchIceConfig() {
   if (!METERED_HOST || !METERED_KEY) return RTC_CALL_CONFIG;
   try {
@@ -2126,7 +2125,7 @@ const ROOM_COVERS = [
   'linear-gradient(135deg,#312e81,#0f172a)'
 ];
 const ROOM_SEATS = 8;
-const RTC_CONFIG = RTC_CALL_CONFIG;
+const RTC_CONFIG = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 Object.assign(ICONS, { crown: '<path d="M2 8l5 4 5-7 5 7 5-4-2.5 11h-15z"/>' });
 
@@ -2251,8 +2250,7 @@ function roomCardHtml(r) {
 function watchRooms() {
   roomsCache.forEach(r => {
     if (roomWatchers.has(r.id)) return;
-    // قناة منفصلة عن قناة الغرفة نفسها حتى لا يقطع إغلاقُ المراقب اتصال العضو داخل الغرفة
-    const ch = supabaseClient.channel('lobby-room-' + r.id);
+    const ch = supabaseClient.channel('voice-room-' + r.id, { config: { presence: { key: me.id } } });
     ch.on('presence', { event: 'sync' }, () => {
       roomPresence.set(r.id, collectMembers(ch.presenceState()));
       refreshRoomCard(r.id);
