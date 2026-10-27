@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
@@ -566,6 +565,20 @@ textarea.form-input{resize:vertical}
 .prot-ico{width:62px;height:62px;margin:0 auto 16px;border-radius:20px;background:var(--grad);color:#fff;display:grid;place-items:center;box-shadow:0 10px 26px rgba(192,38,211,.45)}
 .prot-msg{font-size:16px;font-weight:800;line-height:1.8;color:#f3f0ff;margin-bottom:20px}
 .prot-btn{width:100%;height:46px;border:0;border-radius:16px;background:var(--grad);color:#fff;font-weight:900;font-size:15px;cursor:pointer;font-family:inherit}
+/* إعدادات الغرفة للمالك */
+.bg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px}
+.bg-pick{height:72px;border-radius:14px;border:2px solid transparent;background-size:cover;background-position:center;cursor:pointer;color:#fff;font-family:inherit;font-weight:800;font-size:13px;padding:0}
+.bg-pick.sel{border-color:#e879f9;box-shadow:0 0 0 3px rgba(232,121,249,.25)}
+.bg-pick.none{background:#1a1a2c;display:grid;place-items:center}
+.rs-wrap{padding:4px 2px 6px}
+.rs-title{font-size:18px;font-weight:900;margin-bottom:10px;text-align:center}
+.rs-label{display:block;font-size:13px;color:#cfd2e6;font-weight:800;margin:16px 0 8px}
+.rs-input{width:100%;height:46px;border-radius:14px;border:1px solid var(--border-2);background:#0b0b14;color:#fff;padding:0 14px;font-family:inherit;font-size:15px}
+.rs-music{display:flex;gap:10px}
+.rs-file{flex:1;height:46px;border-radius:14px;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;cursor:pointer;position:relative;overflow:hidden;font-size:14px}
+.rs-file input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.rs-stop{height:46px;padding:0 16px;border-radius:14px;border:1px solid rgba(244,63,94,.5);background:transparent;color:#fda4af;font-weight:800;font-family:inherit;cursor:pointer}
+.rs-note{font-size:12.5px;color:#9ca0bd;margin:10px 0 4px;min-height:16px;text-align:center}
 </style>
 </head>
 <body>
@@ -718,6 +731,7 @@ const ICONS = {
   camera:'<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
   grid:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
   check:'<polyline points="20 6 9 17 4 12"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
   mutemic:'<line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/>',
   camoff:'<path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"/><line x1="1" y1="1" x2="23" y2="23"/>'
 };
@@ -994,6 +1008,8 @@ window.toggleRecording = async () => {
 // تسلسل المكالمة: ring ← ready ← offer ← answer ← end
 // كل الإشارات تمر عبر قنوات مشتركة (subscribed) وتُرسل بعد اكتمال ICE لتجنب فقدان المرشحين
 const RTC_CALL_CONFIG = {
+  iceTransportPolicy: 'all',
+  bundlePolicy: 'max-bundle',
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
@@ -1102,16 +1118,44 @@ async function onSig(p) {
 function makePC(c) {
   const pc = new RTCPeerConnection(RTC_CALL_CONFIG);
   pc.ontrack = e => {
-    const rv = $('callRemote');
-    if (rv) { rv.srcObject = e.streams[0]; rv.play?.().catch(() => {}); }
-    if (c.isVideo && $('callVoice')) $('callVoice').style.display = 'none';
+    const stream = e.streams[0] || new MediaStream([e.track]);
+    if (e.track.kind === 'audio') {
+      const a = $('callAudio');
+      if (a) { a.srcObject = stream; a.play?.().catch(() => toast('اضغط على الشاشة لتفعيل الصوت')); }
+    } else if (e.track.kind === 'video') {
+      const rv = $('callRemote');
+      if (rv) { rv.srcObject = stream; rv.play?.().catch(() => {}); }
+      if ($('callVoice')) $('callVoice').style.display = 'none';
+    }
   };
   pc.onconnectionstatechange = () => {
     if (call !== c) return;
-    if (pc.connectionState === 'connected') { c.connected = true; setCallStatus('متصل'); }
-    if (pc.connectionState === 'failed') { toast('فشل الاتصال بين الجهازين'); endCall(true); }
+    const st = pc.connectionState;
+    if (st === 'connected') { c.connected = true; clearTimeout(c.disconnectTimer); setCallStatus('متصل'); startCallTimer(c); }
+    if (st === 'connecting') setCallStatus('جارٍ الاتصال…');
+    if (st === 'disconnected') {
+      setCallStatus('انقطع الاتصال… جارٍ الاستعادة');
+      c.disconnectTimer = setTimeout(() => { if (call === c) { toast('انقطع الاتصال'); endCall(true); } }, 8000);
+    }
+    if (st === 'failed') { toast('تعذر الاتصال بين الجهازين. قد تحتاج الشبكة إلى مزيد من الوقت'); endCall(true); }
+  };
+  pc.oniceconnectionstatechange = () => {
+    if (call === c && pc.iceConnectionState === 'checking') setCallStatus('جارٍ الاتصال…');
   };
   return pc;
+}
+
+function startCallTimer(c) {
+  if (c.timerIv) return;
+  c.startedAt = Date.now();
+  const tick = () => {
+    const el = $('callTimer'); if (!el || call !== c) return;
+    const sec = Math.floor((Date.now() - c.startedAt) / 1000);
+    const mm = String(Math.floor(sec / 60)).padStart(2, '0'), ss = String(sec % 60).padStart(2, '0');
+    el.textContent = `${mm}:${ss}`;
+  };
+  tick();
+  c.timerIv = setInterval(tick, 1000);
 }
 
 function waitIce(pc) {
@@ -1157,6 +1201,8 @@ window.endCall = (notify = true) => {
   call = null;
   clearTimeout(c.timeout);
   clearTimeout(c.readyTimer);
+  clearTimeout(c.disconnectTimer);
+  clearInterval(c.timerIv);
   c.pc?.close();
   c.stream?.getTracks().forEach(t => t.stop());
   if (c.pairCh) { const ch = c.pairCh; setTimeout(() => supabaseClient.removeChannel(ch), 400); }
@@ -1182,8 +1228,10 @@ function showCallOverlay(status, peer) {
         ${avatarHtml({ ...peer, id: null })}
         <h2 style="font-size:24px;font-weight:900;margin-top:10px">${esc(peer.full_name || 'مستخدم')}</h2>
         <p class="muted" id="callStatus">${esc(status)}</p>
+        <p id="callTimer" style="font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:8px;color:#fff"></p>
       </div>
       <video id="callLocal" autoplay playsinline muted ${vid ? '' : 'style="display:none"'}></video>
+      <audio id="callAudio" autoplay playsinline></audio>
     </div>
     <div class="call-controls" id="callControls"></div>`;
   if (c?.stream && vid) { const lv = $('callLocal'); if (lv) lv.srcObject = c.stream; }
@@ -1854,6 +1902,10 @@ let roomFilter = 'all', roomsCache = [], crCover = 0, rv = null;
 const roomWatchers = new Map(), roomPresence = new Map();
 
 const coverOf = r => ROOM_COVERS[(r.cover_idx || 0) % ROOM_COVERS.length];
+const ROOM_BG_KEYS = ['bg1', 'bg2', 'bg3', 'bg4', 'bg5', 'bg6'];
+const bgOf = r => ROOM_BG_KEYS.includes(r.background_key)
+  ? `linear-gradient(rgba(6,6,12,.5),rgba(6,6,12,.82)), url('bg/${r.background_key}.jpg') center/cover no-repeat`
+  : coverOf(r);
 const avatarInner = m => m.avatar ? `<img src="${esc(m.avatar)}" alt="">` : esc((m.name || 'و').trim().charAt(0) || 'و');
 const collectMembers = state => Object.values(state).map(metas => metas[0]).filter(m => m && m.uid)
   .sort((a, b) => (Number(b.owner) - Number(a.owner)) || String(a.name).localeCompare(String(b.name), 'ar'));
@@ -2035,6 +2087,8 @@ window.joinRoom = async (roomId) => {
   rv = { room, ch: null, pcs: new Map(), audios: new Map(), pending: new Map(), stream: null,
          muted: forced, forcedMute: forced, speaking: false, members: [], vad: null, actx: null, lastTrack: 0, subscribed: false };
   renderRoomView();
+  supabaseClient.from('voice_rooms').select('title, background_key, music_url, music_started_at').eq('id', room.id).maybeSingle()
+    .then(({ data: fresh }) => { if (fresh && rv && rv.room.id === room.id) applyRoomState(fresh); });
 
   let stream = null;
   try {
@@ -2056,6 +2110,7 @@ function connectRoomChannel() {
     .on('broadcast', { event: 'sig' }, ({ payload }) => { if (rv === st) onSignal(payload); })
     .on('broadcast', { event: 'closed' }, () => { if (rv === st) { toast('أغلق المالك الغرفة'); leaveRoom(); } })
     .on('broadcast', { event: 'mod' }, ({ payload }) => { if (rv === st) onModEvent(payload); })
+    .on('broadcast', { event: 'room' }, ({ payload }) => { if (rv === st && st.room.owner_id !== me.id) applyRoomState(payload); })
     .subscribe(status => { if (status === 'SUBSCRIBED' && rv === st) { st.subscribed = true; trackMe(); } });
 }
 
@@ -2064,6 +2119,108 @@ function trackMe() {
   rv.lastTrack = Date.now();
   rv.ch.track(myMeta()).catch(() => {});
 }
+
+function broadcastRoomState() {
+  if (!rv?.ch) return;
+  const r = rv.room;
+  rv.ch.send({ type: 'broadcast', event: 'room', payload: {
+    title: r.title, background_key: r.background_key || null,
+    music_url: r.music_url || null, music_started_at: r.music_started_at || null } });
+}
+
+function applyRoomState(s) {
+  if (!rv || !s) return;
+  const r = rv.room;
+  if ('title' in s && s.title) r.title = s.title;
+  if ('background_key' in s) r.background_key = s.background_key;
+  if ('music_url' in s) r.music_url = s.music_url;
+  if ('music_started_at' in s) r.music_started_at = s.music_started_at;
+  renderRoomView();
+  syncRoomMusic();
+}
+
+function syncRoomMusic() {
+  if (!rv) return;
+  let a = $('rvMusic');
+  if (!a) { a = document.createElement('audio'); a.id = 'rvMusic'; a.preload = 'auto'; document.body.appendChild(a); }
+  const r = rv.room;
+  if (!r.music_url || !r.music_started_at) { a.pause(); a.removeAttribute('src'); a.dataset.url = ''; return; }
+  if (a.dataset.url !== r.music_url) { a.src = r.music_url; a.dataset.url = r.music_url; }
+  const start = () => {
+    const want = Math.max(0, (Date.now() - Date.parse(r.music_started_at)) / 1000);
+    try { a.currentTime = want; } catch (e) {}
+    a.play().catch(() => toast('اضغط في أي مكان لتشغيل موسيقى الغرفة'));
+  };
+  if (a.readyState >= 1) start(); else a.addEventListener('loadedmetadata', start, { once: true });
+}
+
+window.openRoomSettings = () => {
+  if (!rv || rv.room.owner_id !== me.id) return;
+  const r = rv.room;
+  const thumbs = ROOM_BG_KEYS.map(k => `<button type="button" class="bg-pick ${r.background_key === k ? 'sel' : ''}" style="background-image:url('bg/${k}.jpg')" onclick="pickRoomBg('${k}',this)"></button>`).join('');
+  showRoomSheet(`
+    <div class="rs-wrap">
+      <h4 class="rs-title">إعدادات الغرفة</h4>
+      <label class="rs-label">اسم الغرفة</label>
+      <input id="rsTitle" class="rs-input" maxlength="60" value="${esc(r.title)}">
+      <button class="btn-save" style="margin-top:10px" onclick="saveRoomTitle()">حفظ الاسم</button>
+      <label class="rs-label">خلفية الغرفة</label>
+      <div class="bg-grid">${thumbs}<button type="button" class="bg-pick none ${!ROOM_BG_KEYS.includes(r.background_key) ? 'sel' : ''}" onclick="pickRoomBg('',this)">افتراضي</button></div>
+      <label class="rs-label">موسيقى الغرفة (يسمعها الجميع)</label>
+      <div class="rs-music">
+        <label class="rs-file">${ico('mic', 16)} رفع ملف صوتي وتشغيله<input type="file" accept="audio/*" onchange="uploadRoomMusic(this)"></label>
+        <button type="button" class="rs-stop" onclick="stopRoomMusic()">إيقاف</button>
+      </div>
+      <p class="rs-note" id="rsMusicNote">${r.music_url && r.music_started_at ? 'الموسيقى تعمل الآن للجميع' : 'لا توجد موسيقى قيد التشغيل'}</p>
+    </div>`);
+};
+
+window.saveRoomTitle = async () => {
+  if (!rv || rv.room.owner_id !== me.id) return;
+  const title = ($('rsTitle')?.value || '').trim();
+  if (!title) return toast('اكتب اسماً للغرفة');
+  const { error } = await supabaseClient.from('voice_rooms').update({ title }).eq('id', rv.room.id);
+  if (error) return toast('تعذر الحفظ: ' + error.message);
+  applyRoomState({ title }); broadcastRoomState();
+  toast('تم حفظ اسم الغرفة ✨');
+};
+
+window.pickRoomBg = async (k, btn) => {
+  if (!rv || rv.room.owner_id !== me.id) return;
+  const key = ROOM_BG_KEYS.includes(k) ? k : null;
+  const { error } = await supabaseClient.from('voice_rooms').update({ background_key: key }).eq('id', rv.room.id);
+  if (error) return toast('تعذر الحفظ: ' + error.message);
+  document.querySelectorAll('.bg-pick').forEach(b => b.classList.toggle('sel', b === btn));
+  applyRoomState({ background_key: key }); broadcastRoomState();
+  toast('تم تغيير خلفية الغرفة');
+};
+
+window.uploadRoomMusic = async (input) => {
+  const file = input.files?.[0];
+  if (!file || !rv || rv.room.owner_id !== me.id) return;
+  const note = () => $('rsMusicNote');
+  if (note()) note().textContent = 'جارٍ رفع الموسيقى…';
+  const ext = ((file.name.split('.').pop() || 'mp3').toLowerCase().replace(/[^a-z0-9]/g, '')) || 'mp3';
+  const path = `room-music/${rv.room.id}_${Date.now()}.${ext}`;
+  const { error } = await supabaseClient.storage.from('post-images').upload(path, file, { contentType: file.type || 'audio/mpeg' });
+  if (error) { if (note()) note().textContent = 'فشل الرفع: ' + error.message; return; }
+  const { data } = supabaseClient.storage.from('post-images').getPublicUrl(path);
+  const started = new Date().toISOString();
+  const { error: e2 } = await supabaseClient.from('voice_rooms').update({ music_url: data.publicUrl, music_started_at: started }).eq('id', rv.room.id);
+  if (e2) { if (note()) note().textContent = 'تعذر التشغيل: ' + e2.message; return; }
+  applyRoomState({ music_url: data.publicUrl, music_started_at: started }); broadcastRoomState();
+  if (note()) note().textContent = 'الموسيقى تعمل الآن للجميع';
+  toast('تم تشغيل الموسيقى للجميع 🎵');
+};
+
+window.stopRoomMusic = async () => {
+  if (!rv || rv.room.owner_id !== me.id) return;
+  const { error } = await supabaseClient.from('voice_rooms').update({ music_url: null, music_started_at: null }).eq('id', rv.room.id);
+  if (error) return toast('تعذر الإيقاف: ' + error.message);
+  applyRoomState({ music_url: null, music_started_at: null }); broadcastRoomState();
+  if ($('rsMusicNote')) $('rsMusicNote').textContent = 'لا توجد موسيقى قيد التشغيل';
+  toast('تم إيقاف الموسيقى');
+};
 
 window.leaveRoom = async () => {
   if (!rv) return;
@@ -2074,6 +2231,7 @@ window.leaveRoom = async () => {
   st.stream?.getTracks().forEach(t => t.stop());
   st.actx?.close().catch(() => {});
   $('roomView')?.remove();
+  const ma = $('rvMusic'); if (ma) { ma.pause(); ma.removeAttribute('src'); ma.remove(); }
   closeRoomSheet();
   if (st.ch) await supabaseClient.removeChannel(st.ch);
   renderRoomsPage();
@@ -2103,6 +2261,12 @@ function onRoomPresence(state) {
   if (!rv) return;
   rv.members = collectMembers(state);
   refreshMemberProfiles(rv.members.map(m => m.uid));
+  if (rv.room.owner_id === me.id) {
+    const seen = rv.seen || new Set();
+    const fresh = rv.members.some(m => !seen.has(m.uid));
+    rv.seen = new Set(rv.members.map(m => m.uid));
+    if (fresh) broadcastRoomState();
+  }
   const ids = new Set(rv.members.map(m => m.uid));
   rv.pcs.forEach((_, id) => { if (!ids.has(id)) closePeer(id); });
   ids.forEach(id => {
@@ -2244,6 +2408,7 @@ function renderRoomView() {
       <header class="rv-head">
         <button class="rv-btn" onclick="leaveRoom()" title="خروج">${ico('back', 20)}</button>
         <div class="rv-title"><h3 id="rvTitle"></h3><span id="rvSub"></span></div>
+        <button class="rv-btn hidden" id="rvSetBtn" onclick="openRoomSettings()" title="إعدادات الغرفة">${ico('settings', 18)}</button>
         <button class="rv-btn hidden" id="rvBansBtn" onclick="openBanList()" title="المحظورون">${ico('shield', 18)}</button>
         <button class="rv-btn danger hidden" id="rvCloseBtn" onclick="closeRoomAsOwner()" title="إغلاق الغرفة">${ico('x', 18)}</button>
       </header>
@@ -2259,8 +2424,9 @@ function renderRoomView() {
     document.body.appendChild(el);
   }
   const r = rv.room;
-  $('rvBg').style.background = coverOf(r);
+  $('rvBg').style.background = bgOf(r);
   $('rvTitle').innerHTML = esc(r.title) + (r.is_verified ? ' <span class="verified-badge"></span>' : '');
+  $('rvSetBtn')?.classList.toggle('hidden', r.owner_id !== me.id);
   $('rvSub').innerHTML = `${ico('users', 14)} ${rv.members.length} في الغرفة${r.is_premium ? ' · <b class="gold">مميزة</b>' : ''}`;
   $('rvCloseBtn').classList.toggle('hidden', r.owner_id !== me.id);
   $('rvBansBtn').classList.toggle('hidden', r.owner_id !== me.id);
@@ -2490,7 +2656,7 @@ window.adminSearch = (v) => {
 async function loadAdminUsers(q = '') {
   const list = $('adminList'); if (!list) return;
   let query = supabaseClient.from('profiles')
-    .select('id, full_name, username, avatar_url, is_verified, frame, is_protected, created_at')
+    .select('id, full_name, username, avatar_url, is_verified, frame, created_at')
     .order('created_at', { ascending: false }).limit(100);
   if (q) query = query.or(`full_name.ilike.%${q}%,username.ilike.%${q}%`);
   const { data, error } = await query;
