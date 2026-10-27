@@ -2352,7 +2352,7 @@ window.openModerate = async (uid) => {
   if (!rv || rv.room.owner_id !== me.id || uid === me.id) return;
   const m = rv.members.find(x => x.uid === uid);
   if (!m) return;
-  const { data: isProtected, error } = await supabaseClient.rpc('is_app_admin', { p_uid: uid });
+  const { data: isProtected, error } = await supabaseClient.rpc('is_protected_user', { p_uid: uid });
   if (error) return toast('تعذر التحقق: ' + error.message);
   if (isProtected) return showProtectedNotice();
   const { data: rows } = await supabaseClient.from('room_moderation')
@@ -2374,7 +2374,7 @@ window.modAct = async (action, uid) => {
   const name = rv.members.find(x => x.uid === uid)?.name || 'المستخدم';
   try {
     if (action === 'kick' || action === 'ban' || action === 'mute') {
-      const { data: isProtected, error: pErr } = await supabaseClient.rpc('is_app_admin', { p_uid: uid });
+      const { data: isProtected, error: pErr } = await supabaseClient.rpc('is_protected_user', { p_uid: uid });
       if (pErr) throw pErr;
       if (isProtected) return showProtectedNotice();
     }
