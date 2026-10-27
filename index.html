@@ -2250,7 +2250,8 @@ function roomCardHtml(r) {
 function watchRooms() {
   roomsCache.forEach(r => {
     if (roomWatchers.has(r.id)) return;
-    const ch = supabaseClient.channel('voice-room-' + r.id, { config: { presence: { key: me.id } } });
+    // قناة منفصلة عن قناة الغرفة نفسها حتى لا يقطع إغلاقُ المراقب اتصال العضو داخل الغرفة
+    const ch = supabaseClient.channel('lobby-room-' + r.id);
     ch.on('presence', { event: 'sync' }, () => {
       roomPresence.set(r.id, collectMembers(ch.presenceState()));
       refreshRoomCard(r.id);
