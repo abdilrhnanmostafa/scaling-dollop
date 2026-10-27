@@ -2352,6 +2352,7 @@ window.joinRoom = async (roomId) => {
   rv.stream = stream;
   if (stream && forced) stream.getAudioTracks().forEach(t => (t.enabled = false));
   if (stream) startVAD();
+  rv.iceCfg = await fetchIceConfig();
   connectRoomChannel();
 };
 
@@ -2366,6 +2367,8 @@ function connectRoomChannel() {
     .on('broadcast', { event: 'room' }, ({ payload }) => { if (rv === st && st.room.owner_id !== me.id) applyRoomState(payload); })
     .on('broadcast', { event: 'chat' }, ({ payload }) => { if (rv === st) addRoomChat(payload); })
     .subscribe(status => { if (status === 'SUBSCRIBED' && rv === st) { st.subscribed = true; trackMe(); } });
+  st.reconcile = setInterval(() => { if (rv === st && st.subscribed) onRoomPresence(ch.presenceState()); }, 10000);
+  st.retrack = setInterval(() => { if (rv === st && st.subscribed) trackMe(); }, 20000);
 }
 
 function trackMe() {
@@ -2502,6 +2505,8 @@ window.leaveRoom = async () => {
   if (!rv) return;
   const st = rv; rv = null;
   clearInterval(st.vad);
+  clearInterval(st.reconcile);
+  clearInterval(st.retrack);
   st.pcs.forEach(pc => { pc.onconnectionstatechange = null; pc.close(); });
   st.audios.forEach(a => { a.srcObject = null; a.remove(); });
   st.stream?.getTracks().forEach(t => t.stop());
@@ -2544,7 +2549,12 @@ function onRoomPresence(state) {
     if (fresh) broadcastRoomState();
   }
   const ids = new Set(rv.members.map(m => m.uid));
-  rv.pcs.forEach((_, id) => { if (!ids.has(id)) closePeer(id); });
+  rv.gone = rv.gone || {};
+  rv.pcs.forEach((_, id) => {
+    if (ids.has(id)) { delete rv.gone[id]; return; }
+    rv.gone[id] = rv.gone[id] || Date.now();
+    if (Date.now() - rv.gone[id] > 12000) { closePeer(id); delete rv.gone[id]; }
+  });
   ids.forEach(id => {
     if (id !== me.id && !rv.pcs.has(id) && me.id < id) makeOffer(id);
   });
@@ -2552,13 +2562,18 @@ function onRoomPresence(state) {
 }
 
 async function makePeer(id, init) {
-  const pc = new RTCPeerConnection(RTC_CONFIG);
+  const pc = new RTCPeerConnection(rv.iceCfg || RTC_CONFIG);
   rv.pcs.set(id, pc);
   if (rv.stream) rv.stream.getTracks().forEach(t => pc.addTrack(t, rv.stream));
   else if (init) pc.addTransceiver('audio', { direction: 'recvonly' });
   pc.onicecandidate = e => { if (e.candidate) sendSig(id, { candidate: e.candidate }); };
   pc.ontrack = e => attachRemote(id, e.streams[0] || new MediaStream([e.track]));
   pc.onconnectionstatechange = () => {
+    if (pc.connectionState === 'disconnected') {
+      setTimeout(() => {
+        if (rv && rv.pcs.get(id) === pc && pc.connectionState === 'disconnected') { closePeer(id); if (rv?.ch) onRoomPresence(rv.ch.presenceState()); }
+      }, 5000);
+    }
     if (pc.connectionState === 'failed') {
       closePeer(id);
       setTimeout(() => { if (rv?.ch) onRoomPresence(rv.ch.presenceState()); }, 2500);
@@ -3027,6 +3042,7 @@ function handlePushNav(d) {
   if (d.type === 'message' && d.from) return goToChat(d.from);
   if (d.type === 'friend_request' || d.type === 'friend_accept') return document.querySelector('.mobile-nav [data-page=friends], .sidebar [data-page=friends]')?.click();
   if (d.type === 'like' || d.type === 'comment') return openNotifications();
+  if (d.type === 'post' || d.type === 'story') return document.querySelector('[data-page=home]')?.click();
 }
 function handleLaunchParams() {
   const q = new URLSearchParams(location.search);
