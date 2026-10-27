@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
@@ -247,4 +248,2410 @@ i[data-ico]{display:inline-grid;place-items:center;font-style:normal}
 .chat-window{display:flex;flex-direction:column;min-width:0;min-height:0;background:linear-gradient(180deg,rgba(255,255,255,.015),transparent)}
 .chat-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:rgba(0,0,0,.22);min-height:68px}
 .chat-header .avatar{width:44px;height:44px}
-.chat-header-info{cursor:pointer;lin
+.chat-header-info{cursor:pointer;line-height:1.35}
+.chat-header-info .name{font-size:16px;font-weight:800}
+.chat-header-info .status{font-size:12px;color:var(--muted)}
+.chat-header-actions{display:flex;gap:8px;margin-inline-start:auto}
+.chat-header-actions button{color:var(--primary-2);background:rgba(139,92,246,.12);width:42px;height:42px;border-radius:14px;display:grid;place-items:center;border:1px solid rgba(139,92,246,.25)}
+.chat-header-actions button:hover{background:var(--primary);color:#fff}
+.chat-placeholder{flex:1;display:flex;align-items:center;justify-content:center}
+.back-btn-chat{display:none;width:40px;height:40px;border-radius:14px;background:var(--surface-2);place-items:center}
+
+.chat-messages{flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;min-height:0}
+.msg-bubble{max-width:76%;padding:10px 15px;border-radius:20px;font-size:14.5px;line-height:1.55;position:relative;word-wrap:break-word;animation:fadeIn .25s}
+.msg-bubble.them{align-self:flex-start;background:var(--surface-2);border:1px solid var(--border);border-end-start-radius:6px}
+.msg-bubble.me{align-self:flex-end;background:var(--grad);border-end-end-radius:6px;box-shadow:0 6px 20px rgba(168,50,220,.3)}
+.msg-time{font-size:10px;opacity:.65;margin-top:2px;display:block;text-align:end}
+.msg-bubble audio{width:100%;min-width:200px;max-width:240px;height:38px;margin-top:2px}
+
+.quick-replies{display:flex;gap:8px;padding:8px 16px;overflow-x:auto}
+.quick-replies::-webkit-scrollbar{display:none}
+.quick-reply-btn{white-space:nowrap;padding:7px 15px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:#c9cbe0;font-size:13px;font-weight:600}
+.quick-reply-btn:hover{background:rgba(139,92,246,.2);color:#fff;border-color:var(--primary)}
+
+.chat-input{padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:10px;background:rgba(0,0,0,.22);align-items:center}
+.chat-input input{flex:1;padding:12px 18px;border-radius:26px;background:rgba(255,255,255,.06);border:1px solid var(--border);font-size:14.5px;min-width:0}
+.chat-input input:focus{border-color:var(--primary)}
+.chat-input input:disabled{opacity:.5}
+.send-btn,.mic-btn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex-shrink:0}
+.send-btn{background:var(--grad);color:#fff;box-shadow:var(--glow)}
+.send-btn svg{transform:scaleX(-1)}
+.send-btn:disabled{opacity:.45;box-shadow:none}
+.mic-btn{background:var(--surface-2);border:1px solid var(--border)}
+.mic-btn.recording{background:var(--danger);animation:pulse 1s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(244,63,94,.6)}70%{box-shadow:0 0 0 14px rgba(244,63,94,0)}100%{box-shadow:0 0 0 0 rgba(244,63,94,0)}}
+
+/* ================= CALLS ================= */
+.call-modal{position:fixed;inset:0;z-index:100000;background:#05050a;display:flex;flex-direction:column}
+.call-video-container{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(circle at 50% 30%,#2a1a52,#05050a 70%)}
+#remoteVideo{width:100%;height:100%;object-fit:cover}
+#localVideo{position:absolute;bottom:18px;inset-inline-start:18px;width:112px;height:150px;object-fit:cover;border-radius:18px;border:2px solid rgba(255,255,255,.35);z-index:10;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.call-voice{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.call-voice .avatar{width:120px;height:120px;font-size:44px;box-shadow:0 0 0 14px rgba(139,92,246,.15),0 0 0 30px rgba(139,92,246,.07)}
+.call-controls{padding:24px calc(24px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:18px;background:rgba(0,0,0,.6);backdrop-filter:blur(14px)}
+.call-btn{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;color:#fff;background:rgba(255,255,255,.14)}
+.call-btn.end{background:var(--danger);box-shadow:0 8px 24px rgba(244,63,94,.5)}
+.call-btn.accept{background:var(--ok);box-shadow:0 8px 24px rgba(34,197,94,.5)}
+.call-btn.off{background:#fff;color:#111}
+.incoming-call-modal{position:fixed;inset:0;z-index:100001;background:radial-gradient(circle at 50% 30%,rgba(60,30,120,.95),rgba(5,5,10,.97));display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;backdrop-filter:blur(14px);gap:6px}
+.incoming-call-modal .avatar{width:110px;height:110px;font-size:40px;margin-bottom:18px;animation:ring 1.6s infinite}
+@keyframes ring{0%{box-shadow:0 0 0 0 rgba(139,92,246,.6)}100%{box-shadow:0 0 0 40px rgba(139,92,246,0)}}
+.incoming-call-modal .call-actions{display:flex;gap:40px;margin-top:40px}
+
+/* ================= FRIENDS ================= */
+.friends-header{padding:26px 22px;background:var(--grad-soft);border-radius:var(--r-lg);margin-bottom:18px;border:1px solid var(--border);text-align:center}
+.friends-header h2{font-size:24px;font-weight:900;margin-bottom:4px}
+.friends-tabs{display:flex;gap:6px;margin-bottom:16px;padding:5px;border-radius:18px;background:rgba(0,0,0,.3);border:1px solid var(--border);overflow-x:auto}
+.friends-tab{flex:1;padding:10px 14px;text-align:center;border-radius:14px;font-weight:700;font-size:14px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.friends-tab.active{background:var(--grad);color:#fff;box-shadow:var(--glow)}
+.friend-card{display:flex;align-items:center;gap:14px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:20px;margin-bottom:10px;transition:.2s}
+.friend-card:hover{border-color:var(--border-2);transform:translateY(-1px)}
+.friend-card .avatar{width:54px;height:54px}
+.friend-info{flex:1;cursor:pointer;min-width:0}
+.friend-info strong{display:block;font-size:15.5px;line-height:1.35}
+.friend-actions{display:flex;gap:8px}
+.btn-accept{background:var(--grad);color:#fff;padding:9px 18px;border-radius:12px;font-weight:800;font-size:13px}
+.btn-decline{background:var(--surface-2);border:1px solid var(--border);padding:9px 16px;border-radius:12px;font-weight:700;font-size:13px}
+.btn-add{background:rgba(139,92,246,.15);color:var(--primary-2);border:1px solid rgba(139,92,246,.45);padding:9px 16px;border-radius:12px;font-weight:800;font-size:13px}
+.btn-add:hover{background:var(--primary);color:#fff}
+
+.panel-title{font-size:16px;font-weight:900;padding:18px 18px 8px;display:flex;align-items:center;gap:8px}
+.panel-title i{color:var(--primary-2)}
+.suggestion-row{display:flex;align-items:center;gap:10px;margin:0 8px 4px;padding:9px 10px;border-radius:16px;transition:.2s}
+.suggestion-row:hover{background:var(--surface)}
+.suggestion-row .avatar{width:42px;height:42px}
+.suggestion-info{flex:1;cursor:pointer;min-width:0;line-height:1.35}
+.suggestion-info strong{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.suggestion-info span{font-size:11.5px;color:var(--muted)}
+.btn-suggest-add{background:rgba(139,92,246,.15);color:var(--primary-2);border:1px solid rgba(139,92,246,.45);border-radius:10px;padding:5px 12px;font-size:12px;font-weight:800}
+.btn-suggest-add:hover{background:var(--primary);color:#fff}
+.panel-more{margin:8px 14px 16px;width:calc(100% - 28px);padding:10px;border-radius:14px;background:var(--surface);border:1px solid var(--border);font-weight:700;font-size:13px;color:#d6d8ea}
+.panel-more:hover{border-color:var(--primary)}
+
+/* ================= MODALS ================= */
+.modal-overlay{position:fixed;inset:0;z-index:99999;background:rgba(3,3,8,.78);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;padding:18px;animation:fadeOv .2s}
+@keyframes fadeOv{from{opacity:0}to{opacity:1}}
+.modal-content{background:linear-gradient(180deg,#171726,#0f0f1a);border:1px solid var(--border-2);border-radius:28px;width:100%;max-width:500px;padding:22px;max-height:88vh;overflow-y:auto;box-shadow:0 30px 80px rgba(0,0,0,.6);animation:pop .3s var(--ease)}
+@keyframes pop{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:none}}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-weight:900;font-size:18px}
+.modal-close{background:var(--surface-2);width:34px;height:34px;border-radius:50%;display:grid;place-items:center}
+.modal-close:hover{background:var(--danger)}
+.form-label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:6px;margin-top:14px;font-weight:600}
+.form-input{width:100%;padding:13px 15px;border-radius:14px;background:rgba(0,0,0,.35);border:1px solid var(--border);font-size:14.5px}
+.form-input:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(139,92,246,.14)}
+textarea.form-input{resize:vertical}
+.btn-save{width:100%;padding:14px;border-radius:14px;background:var(--grad);color:#fff;font-weight:800;margin-top:20px;box-shadow:var(--glow)}
+.notif-item{display:flex;gap:12px;padding:11px;align-items:center;cursor:pointer;border-radius:16px;transition:.2s}
+.notif-item:hover{background:var(--surface-2)}
+.notif-item .avatar{width:44px;height:44px}
+.notif-text{flex:1;font-size:14px;line-height:1.45}
+.notif-time{font-size:11px;color:var(--muted)}
+.comments-list{max-height:320px;overflow-y:auto;margin-bottom:14px;display:flex;flex-direction:column;gap:10px}
+.comment-item{display:flex;gap:10px;background:var(--surface);padding:10px 12px;border-radius:16px}
+.comment-item .avatar{width:34px;height:34px;font-size:13px}
+.comment-item .text{font-size:13.5px;flex:1}
+.comment-item .name{font-weight:800;color:var(--primary-2);font-size:12.5px;display:block;cursor:pointer}
+.post-options-list{display:flex;flex-direction:column}
+.post-option-btn{padding:17px;font-size:15.5px;font-weight:700;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px}
+.post-option-btn:last-child{border-bottom:none;color:var(--muted)}
+.post-option-btn:hover{background:var(--surface)}
+.post-option-btn.danger{color:var(--danger)}
+.privacy-text p{margin-bottom:10px;color:#cfd1e6;font-size:14.5px}
+
+/* ================= REELS ================= */
+.reels-overlay-container{position:fixed;inset:0;z-index:9990;background:#000;display:flex;flex-direction:column;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none}
+.reels-overlay-container::-webkit-scrollbar{display:none}
+.reel-slide{position:relative;width:100%;height:100vh;height:100dvh;flex-shrink:0;scroll-snap-align:start;background:#000}
+.reel-video{width:100%;height:100%;object-fit:cover}
+.reel-gradient-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,rgba(0,0,0,.15) 35%,transparent 60%),linear-gradient(to bottom,rgba(0,0,0,.5) 0%,transparent 16%);pointer-events:none}
+.reel-top-bar{position:absolute;top:20px;left:0;right:0;display:flex;justify-content:center;gap:22px;color:#fff;font-weight:700;z-index:10}
+.reel-top-bar span{opacity:.6;font-size:15px}
+.reel-top-bar span.active{opacity:1;border-bottom:2px solid #fff;padding-bottom:2px}
+.reel-close-btn{position:absolute;top:14px;inset-inline-start:14px;width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.45);backdrop-filter:blur(8px);color:#fff;display:grid;place-items:center;z-index:11}
+.reel-side-actions{position:absolute;inset-inline-start:14px;bottom:130px;display:flex;flex-direction:column;gap:20px;z-index:10;align-items:center}
+.reel-action-btn{display:flex;flex-direction:column;align-items:center;color:#fff;gap:4px;font-size:12px;font-weight:700;cursor:pointer}
+.reel-action-icon{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.16);backdrop-filter:blur(12px);display:grid;place-items:center;border:1px solid rgba(255,255,255,.22)}
+.reel-action-btn.liked .reel-action-icon{color:var(--accent);background:rgba(236,72,153,.3)}
+.reel-action-btn.liked svg{fill:var(--accent)}
+.reel-bottom-info{position:absolute;bottom:28px;inset-inline-end:16px;inset-inline-start:84px;color:#fff;z-index:10;padding-bottom:env(safe-area-inset-bottom)}
+.reel-user-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.reel-user-row .avatar{width:38px;height:38px;border:2px solid #fff}
+.reel-user-name{font-weight:800;font-size:15px;cursor:pointer}
+.reel-caption{font-size:14px;line-height:1.55;margin-bottom:8px;text-shadow:0 1px 4px rgba(0,0,0,.8)}
+.reel-tags{font-size:12.5px;opacity:.9}
+.reel-music-disc{width:34px;height:34px;border-radius:50%;background:#222;border:5px solid #111;display:grid;place-items:center;font-size:12px;animation:spin 4s linear infinite}
+@keyframes spin{100%{transform:rotate(360deg)}}
+.reel-add{position:fixed;top:14px;inset-inline-end:14px;z-index:9999}
+.reel-add label{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:30px;background:var(--grad);color:#fff;font-weight:800;font-size:14px;cursor:pointer;box-shadow:var(--glow)}
+
+/* ================= VOICE ROOMS ================= */
+.rooms-hero{position:relative;overflow:hidden;display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:26px 24px;border-radius:var(--r-lg);border:1px solid var(--border);background:linear-gradient(135deg,rgba(124,58,237,.38),rgba(236,72,153,.18) 60%,rgba(7,7,13,.35));margin-bottom:18px}
+.rh-glow{position:absolute;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(236,72,153,.45),transparent 70%);top:-140px;inset-inline-end:-70px;pointer-events:none}
+.rh-text{flex:1;min-width:200px;position:relative}
+.rh-kicker{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#fff;background:rgba(255,255,255,.12);padding:4px 12px;border-radius:20px;margin-bottom:8px}
+.rh-text h2{font-size:26px;font-weight:900;line-height:1.3}
+.rh-text p{color:#d6d8ea;font-size:14px}
+.rh-create{width:auto;position:relative;padding:12px 22px;border-radius:16px;display:inline-flex;align-items:center;gap:8px}
+
+.rooms-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.room-card{position:relative;cursor:pointer;border-radius:24px;overflow:hidden;background:var(--surface);border:1px solid var(--border);display:flex;flex-direction:column;transition:transform .25s var(--ease),border-color .25s,box-shadow .25s}
+.room-card:hover{transform:translateY(-3px);border-color:var(--border-2);box-shadow:0 18px 40px rgba(0,0,0,.4)}
+.room-card.premium{border-color:rgba(250,204,21,.6);box-shadow:0 0 0 1px rgba(250,204,21,.18),0 12px 34px rgba(250,204,21,.14)}
+.rc-cover{height:118px;background:var(--cover);position:relative;display:flex;align-items:flex-start;justify-content:space-between;padding:12px}
+.rc-cover::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(255,255,255,.28),transparent 55%);pointer-events:none}
+.rc-count,.rc-premium{position:relative;z-index:1;display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:20px;font-size:12px;font-weight:800;color:#fff;background:rgba(0,0,0,.35);backdrop-filter:blur(8px)}
+.rc-premium{background:linear-gradient(135deg,#facc15,#f59e0b);color:#1f1300}
+.rc-body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px;flex:1}
+.rc-body h3{font-size:16px;font-weight:900;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc-body p{font-size:13px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rc-foot{margin-top:auto;padding-top:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.rc-host{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:#d6d8ea;min-width:0}
+.rc-host .avatar{width:28px;height:28px;font-size:12px}
+.rc-host span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
+.rc-stack{display:flex;align-items:center;flex-shrink:0}
+.rc-mini{width:24px;height:24px;border-radius:50%;border:2px solid var(--surface-solid);background:var(--grad);display:grid;place-items:center;font-size:10px;font-weight:800;color:#fff;overflow:hidden}
+.rc-stack .rc-mini + .rc-mini{margin-inline-start:-8px}
+.rc-mini img{width:100%;height:100%;object-fit:cover}
+
+.cover-pick{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.cp{width:44px;height:44px;border-radius:14px;border:2px solid transparent;transition:.2s}
+.cp.sel{border-color:#fff;box-shadow:0 0 0 3px rgba(139,92,246,.5);transform:scale(1.06)}
+.premium-toggle{display:flex;gap:12px;align-items:flex-start;margin-top:16px;padding:14px;border-radius:18px;background:rgba(250,204,21,.07);border:1px solid rgba(250,204,21,.3);cursor:pointer}
+.premium-toggle.locked{opacity:.55;cursor:not-allowed;background:var(--surface);border-color:var(--border)}
+.premium-toggle input{margin-top:4px;width:18px;height:18px;accent-color:#f59e0b;flex-shrink:0}
+.pt-text{display:flex;flex-direction:column;gap:4px}
+.pt-text b{font-size:14.5px;display:inline-flex;align-items:center;gap:6px;color:#fde68a}
+.pt-text small{color:var(--muted);font-size:12.5px;line-height:1.5}
+
+/* full-screen room */
+.room-view{position:fixed;inset:0;z-index:100003;background:#06060c;display:flex;flex-direction:column;overflow:hidden;color:#fff;animation:fadeIn .3s var(--ease)}
+.rv-bg{position:absolute;inset:-60px;opacity:.5;filter:blur(70px);pointer-events:none}
+.room-view>*:not(.rv-bg){position:relative;z-index:1}
+.rv-head{display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top)) 16px 10px}
+.rv-title{flex:1;min-width:0}
+.rv-title h3{font-size:18px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rv-title span{font-size:12.5px;color:#cfd2e6;display:inline-flex;gap:6px;align-items:center}
+.rv-title .gold{color:#facc15;font-weight:800}
+.rv-btn{width:42px;height:42px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(10px);display:grid;place-items:center;color:#fff;border:1px solid rgba(255,255,255,.15);flex-shrink:0}
+.rv-btn.danger{background:rgba(244,63,94,.28)}
+.rv-seats{display:grid;grid-template-columns:repeat(4,1fr);gap:20px 8px;padding:26px 14px 10px;justify-items:center}
+.seat{display:flex;flex-direction:column;align-items:center;gap:7px;width:100%;min-width:0}
+.seat-ring{position:relative;width:74px;height:74px;border-radius:50%;padding:3px;background:rgba(255,255,255,.14);transition:background .25s,box-shadow .25s}
+.seat.talking .seat-ring{background:var(--grad-ring);box-shadow:0 0 0 4px rgba(236,72,153,.2),0 0 26px rgba(139,92,246,.75);animation:talk 1s ease-in-out infinite alternate}
+@keyframes talk{to{transform:scale(1.07)}}
+.seat.host .seat-ring{background:linear-gradient(135deg,#facc15,#f59e0b)}
+.seat-av{width:100%;height:100%;border-radius:50%;overflow:hidden;background:var(--grad);display:grid;place-items:center;font-weight:900;font-size:24px;border:3px solid #0b0b14}
+.seat-av img{width:100%;height:100%;object-fit:cover}
+.seat.empty .seat-av{background:rgba(255,255,255,.05);color:#6b6e86;font-size:24px;border:2px dashed rgba(255,255,255,.2)}
+.seat-mute,.seat-crown{position:absolute;width:24px;height:24px;border-radius:50%;display:grid;place-items:center}
+.seat-mute{bottom:-2px;inset-inline-end:-2px;background:#f43f5e;color:#fff;border:2px solid #06060c}
+.seat-crown{top:-8px;inset-inline-start:50%;transform:translateX(50%);background:#facc15;color:#2a1700;border:2px solid #06060c}
+.seat-name{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center}
+.rv-listeners{display:flex;flex-wrap:wrap;gap:8px;padding:6px 18px 12px;justify-content:center;max-height:28vh;overflow-y:auto}
+.rv-chip-label{width:100%;text-align:center;font-size:12px;color:#aab0c9;font-weight:700}
+.lis-chip{display:flex;align-items:center;gap:6px;padding:4px 12px 4px 4px;border-radius:20px;background:rgba(255,255,255,.1);font-size:12.5px;font-weight:600}
+.lis-chip .mini{width:26px;height:26px;border-radius:50%;background:var(--grad);display:grid;place-items:center;font-size:11px;font-weight:800;overflow:hidden}
+.lis-chip .mini img{width:100%;height:100%;object-fit:cover}
+.rv-bar{margin-top:auto;padding:18px 18px calc(20px + env(safe-area-inset-bottom));display:flex;align-items:center;justify-content:center;gap:22px;background:linear-gradient(0deg,rgba(0,0,0,.75),transparent)}
+.rv-micwrap{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#cfd2e6}
+.rv-mic{width:78px;height:78px;border-radius:50%;background:var(--grad);display:grid;place-items:center;color:#fff;box-shadow:var(--glow)}
+.rv-mic.off{background:rgba(255,255,255,.14);box-shadow:none}
+.rv-mic:disabled{opacity:.5}
+.rv-leave{height:50px;padding:0 26px;border-radius:25px;background:rgba(244,63,94,.92);color:#fff;font-weight:800;box-shadow:0 8px 24px rgba(244,63,94,.4)}
+
+@media(max-width:820px){
+  .rooms-grid{grid-template-columns:1fr}
+  .rh-create{width:100%;justify-content:center}
+  .rooms-hero{padding:22px 18px}
+  .mobile-nav button{min-width:50px;padding:8px 6px;font-size:10px}
+  .rv-seats{grid-template-columns:repeat(4,1fr);gap:16px 4px}
+  .seat-ring{width:66px;height:66px}
+}
+
+/* ================= MODERATION ================= */
+.mod-overlay{position:fixed;inset:0;z-index:100010;background:rgba(3,3,8,.7);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;animation:fadeOv .2s}
+.mod-card{width:100%;max-width:460px;max-height:86vh;overflow-y:auto;background:linear-gradient(180deg,#1a1a2c,#0f0f1a);border:1px solid var(--border-2);border-radius:28px 28px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));animation:slideUp .3s var(--ease)}
+@media(min-width:821px){.mod-overlay{align-items:center}.mod-card{border-radius:28px}}
+.mod-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.mod-head .avatar{width:46px;height:46px;font-size:18px}
+.mod-head b{font-size:16px;display:block}
+.mod-head span{font-size:12px;color:var(--muted)}
+.mod-act{width:100%;display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:var(--surface);border:1px solid var(--border);font-weight:700;font-size:15px;margin-bottom:8px;text-align:start}
+.mod-act:hover{background:var(--surface-2)}
+.mod-act.warn{color:#fde68a}
+.mod-act.danger{color:#fda4af;border-color:rgba(244,63,94,.35)}
+.mod-act.danger:hover{background:rgba(244,63,94,.12)}
+.mod-notice{text-align:center;padding:8px 4px 4px}
+.mod-notice .mn-ico{width:64px;height:64px;border-radius:22px;background:linear-gradient(135deg,#facc15,#f59e0b);color:#2a1700;display:grid;place-items:center;margin:0 auto 14px}
+.mod-notice h4{font-size:17px;font-weight:900;margin-bottom:8px}
+.mod-notice p{color:#d6d8ea;font-size:14.5px;line-height:1.7;margin-bottom:16px}
+.mod-row{display:flex;align-items:center;gap:10px;padding:10px;border-radius:16px;background:var(--surface);margin-bottom:8px}
+.mod-row .avatar{width:40px;height:40px}
+.mod-row span{flex:1;font-weight:700;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mod-row .btn-decline{flex-shrink:0}
+
+/* ================= PUSH BANNER ================= */
+.push-banner{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--grad-soft);border-color:rgba(139,92,246,.35)}
+.push-banner .pb-ico{width:44px;height:44px;border-radius:14px;background:var(--grad);display:grid;place-items:center;flex-shrink:0;box-shadow:var(--glow)}
+.push-banner .pb-text{flex:1;min-width:0;line-height:1.45}
+.push-banner .pb-text strong{display:block;font-size:14.5px}
+.push-banner .pb-text span{font-size:12.5px;color:var(--muted)}
+.push-banner .btn-primary{width:auto;padding:9px 20px;font-size:14px;border-radius:14px;flex-shrink:0}
+.pb-x{width:30px;height:30px;border-radius:50%;color:var(--muted);display:grid;place-items:center;flex-shrink:0}
+.pb-x:hover{background:var(--surface-2);color:#fff}
+
+/* ================= MOBILE NAV & TOAST ================= */
+.mobile-nav{display:none}
+#toastBox{position:fixed;left:0;right:0;bottom:104px;z-index:100005;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+.toast{background:rgba(24,24,40,.95);border:1px solid var(--border-2);backdrop-filter:blur(14px);color:#fff;padding:11px 22px;border-radius:30px;font-weight:700;font-size:14px;animation:slideUp .3s var(--ease);box-shadow:0 10px 40px rgba(0,0,0,.5),0 0 0 1px rgba(139,92,246,.3);max-width:90vw;pointer-events:auto}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+@media(max-width:1100px){
+  .layout{grid-template-columns:220px minmax(0,1fr)}
+  .right-panel{display:none}
+}
+@media(max-width:820px){
+  body{padding-bottom:110px}
+  .layout{grid-template-columns:1fr;padding:0 10px;margin-top:14px}
+  .sidebar,.right-panel{display:none}
+  .search-pill{display:none}
+  .icon-btn.search-only{display:grid}
+  .header-actions{margin-inline-start:auto}
+  .glass-card{border-radius:22px}
+  .tp-cover{height:150px}
+  .tp-avatar-wrap{width:92px;height:92px;bottom:-46px}
+  .tp-info-section{padding-top:56px}
+  .mobile-nav{display:flex;justify-content:space-around;align-items:center;position:fixed;bottom:14px;left:14px;right:14px;background:rgba(18,18,32,.82);backdrop-filter:blur(26px) saturate(180%);border:1px solid var(--border-2);border-radius:30px;padding:8px 8px calc(8px + env(safe-area-inset-bottom));z-index:100;box-shadow:0 18px 44px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.1)}
+  .mobile-nav button{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10.5px;font-weight:700;position:relative;padding:8px 12px;border-radius:20px;min-width:58px}
+  .mobile-nav button.active{color:#fff}
+  .mobile-nav button.active::before{content:'';position:absolute;inset:0;background:var(--grad-soft);border-radius:20px;border:1px solid rgba(139,92,246,.35);z-index:-1}
+  .mobile-nav button.active svg{stroke:var(--primary-2);filter:drop-shadow(0 0 8px rgba(139,92,246,.8))}
+  .chat-container{grid-template-columns:1fr;height:calc(100vh - 190px);height:calc(100dvh - 190px);border-radius:22px}
+  .chat-sidebar{display:none}
+  .chat-sidebar.active{display:flex}
+  .chat-window{display:none}
+  .chat-window.active{display:flex}
+  .back-btn-chat{display:grid}
+  .msg-bubble{max-width:86%}
+  .friend-card{padding:12px}
+}
+
+/* ===== frames, profile avatar, verification, admin ===== */
+.av-frame{position:relative;display:inline-flex;flex-shrink:0;border-radius:50%}
+.av-frame .av-ring{position:absolute;left:50%;top:50%;width:150%;height:150%;transform:translate(-50%,-50%);pointer-events:none;z-index:3;max-width:none}
+.tp-avatar-wrap{top:136px;bottom:auto}
+.tp-avatar-wrap .av-ring{position:absolute;left:50%;top:50%;width:150%;height:150%;transform:translate(-50%,-50%);pointer-events:none;z-index:7;max-width:none}
+.admin-search{margin-bottom:12px}
+.admin-search input{width:100%;padding:13px 16px;border-radius:16px;background:rgba(0,0,0,.35);border:1px solid var(--border);font-size:14.5px}
+.admin-row .btn-add.on{background:var(--grad);color:#fff;border-color:transparent}
+.admin-acts{flex-direction:column;gap:6px}
+.room-mini-cover{width:44px;height:44px;border-radius:14px;flex-shrink:0}
+@media(max-width:820px){.tp-avatar-wrap{top:104px;bottom:auto}}
+/* ===== الصورة الشخصية فوق الغلاف ===== */
+.tp-container .tp-cover{z-index:0}
+.tp-container .tp-avatar-wrap{z-index:10;top:136px;bottom:auto;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+@media(max-width:820px){.tp-container .tp-avatar-wrap{top:104px}}
+/* ===== إطار الدرع أمام الغلاف في صفحة الملف الشخصي ===== */
+.tp-container .tp-avatar-wrap{overflow:visible}
+.tp-container .tp-avatar-wrap .av-ring{position:absolute;left:50%;top:50%;width:160%;height:160%;transform:translate(-50%,-50%);z-index:12;pointer-events:none;max-width:none;display:block}
+/* ===== تناسب حجم الدرع مع الصورة الشخصية ===== */
+.av-frame .av-ring,.tp-container .tp-avatar-wrap .av-ring{width:132%;height:132%;transform:translate(-50%,-50%);filter:drop-shadow(0 6px 14px rgba(0,0,0,.45));max-width:none}
+.tp-container .tp-avatar-wrap{overflow:visible}
+@media(max-width:820px){.tp-container .tp-avatar-wrap .av-ring{width:128%;height:128%}}
+/* درع المستخدم داخل الغرفة الصوتية */
+.seat-ring .av-ring{position:absolute;left:50%;top:50%;width:140%;height:140%;transform:translate(-50%,-50%);pointer-events:none;z-index:3;max-width:none;filter:drop-shadow(0 4px 10px rgba(0,0,0,.45))}
+/* رسالة الحماية في منتصف الشاشة */
+.prot-overlay{position:fixed;inset:0;z-index:100020;background:rgba(3,3,8,.72);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeOv .2s}
+.prot-card{width:100%;max-width:340px;text-align:center;padding:30px 24px 22px;border-radius:26px;background:linear-gradient(180deg,#1d1030,#0f0f1a);border:1px solid rgba(192,38,211,.45);box-shadow:0 0 0 6px rgba(139,92,246,.08),0 20px 60px rgba(124,58,237,.35);animation:pop .3s var(--ease)}
+.prot-ico{width:62px;height:62px;margin:0 auto 16px;border-radius:20px;background:var(--grad);color:#fff;display:grid;place-items:center;box-shadow:0 10px 26px rgba(192,38,211,.45)}
+.prot-msg{font-size:16px;font-weight:800;line-height:1.8;color:#f3f0ff;margin-bottom:20px}
+.prot-btn{width:100%;height:46px;border:0;border-radius:16px;background:var(--grad);color:#fff;font-weight:900;font-size:15px;cursor:pointer;font-family:inherit}
+</style>
+</head>
+<body>
+
+<!-- ================= AUTH ================= -->
+<div id="authScreen" class="auth-screen">
+  <div class="auth-box">
+    <div class="logo-mark">و</div>
+    <h1>WASL</h1>
+    <p class="tag">تواصل مع من تحب بأمان 💜</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin">تسجيل الدخول</button>
+      <button class="auth-tab" id="tabSignup">حساب جديد</button>
+    </div>
+    <div class="input-group hidden" id="nameGroup"><input type="text" id="authName" placeholder="الاسم الكامل" autocomplete="name"></div>
+    <div class="input-group"><input type="email" id="authEmail" placeholder="البريد الإلكتروني" autocomplete="email"></div>
+    <div class="input-group"><input type="password" id="authPassword" placeholder="كلمة المرور" autocomplete="current-password"></div>
+    <button class="btn-primary" id="btnLogin">دخول</button>
+    <button class="btn-primary hidden" id="btnSignup">إنشاء الحساب</button>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="appScreen" class="hidden">
+
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand" onclick="document.querySelector('[data-page=home]').click()">
+        <div class="brand-icon">و</div><span class="brand-text">WASL</span>
+      </div>
+      <button class="search-pill" onclick="openSearchModal()"><i data-ico="search" data-s="18"></i><span>ابحث عن أصدقاء…</span></button>
+      <div class="header-actions">
+        <button class="icon-btn search-only" onclick="openSearchModal()" title="بحث"><i data-ico="search"></i></button>
+        <button class="icon-btn" onclick="openNotifications()" title="الإشعارات"><i data-ico="bell"></i><span id="notifDot" class="notif-dot hidden"></span></button>
+        <div class="avatar" id="headerAvatar" onclick="document.querySelector('[data-page=profile]').click()">و</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar glass-card">
+      <div class="side-user" id="sideUser" onclick="document.querySelector('[data-page=profile]').click()"></div>
+      <div class="nav-wrap">
+        <button class="nav-btn active" data-page="home"><i data-ico="home"></i> الرئيسية</button>
+        <button class="nav-btn" data-page="messages"><i data-ico="msg"></i> الرسائل</button>
+        <button class="nav-btn" data-page="reels"><i data-ico="reel"></i> الريلز</button>
+        <button class="nav-btn" data-page="rooms"><i data-ico="mic"></i> الغرف الصوتية</button>
+        <button class="nav-btn hidden" id="adminNav" data-page="admin"><i data-ico="shield"></i> لوحة المشرف</button>
+        <button class="nav-btn" data-page="friends"><i data-ico="users"></i> الأصدقاء</button>
+        <button class="nav-btn" data-page="profile"><i data-ico="user"></i> حسابي</button>
+        <div class="nav-sep"></div>
+        <button class="nav-btn" onclick="openPrivacyModal()"><i data-ico="shield"></i> الخصوصية</button>
+        <button class="nav-btn danger" onclick="logout()"><i data-ico="logout"></i> تسجيل الخروج</button>
+      </div>
+    </aside>
+
+    <main id="mainContent">
+      <section id="homePage">
+        <div class="glass-card push-banner hidden" id="pushBanner">
+          <div class="pb-ico"><i data-ico="bell" data-s="22"></i></div>
+          <div class="pb-text"><strong id="pbTitle">فعّل إشعارات الهاتف</strong><span id="pbText">لتصلك الرسائل والإعجابات حتى لو كان التطبيق مغلقاً.</span></div>
+          <button class="btn-primary" id="btnEnablePush">تفعيل</button>
+          <button class="pb-x" id="btnDismissPush" title="لاحقاً"><i data-ico="x" data-s="16"></i></button>
+        </div>
+        <div class="glass-card stories-card">
+          <div class="stories-wrapper" id="storiesContainer"></div>
+          <input type="file" id="storyFile" accept="image/*,video/mp4,video/webm" hidden>
+        </div>
+        <div class="glass-card composer">
+          <div class="composer-top">
+            <div class="avatar" id="composerAvatar">و</div>
+            <textarea id="postText" placeholder="بماذا تفكر؟" rows="2"></textarea>
+          </div>
+          <div id="mediaPreviewBox" class="hidden media-preview">
+            <img id="previewImg" class="hidden">
+            <video id="previewVid" class="hidden" controls controlsList="nodownload"></video>
+            <button class="x" onclick="clearMedia()"><i data-ico="x" data-s="16"></i></button>
+          </div>
+          <div class="composer-actions">
+            <label for="postMedia" class="pill-btn"><i data-ico="image" data-s="18"></i> صورة / فيديو</label>
+            <input type="file" id="postMedia" accept="image/*,video/mp4" hidden>
+            <button class="btn-primary" id="btnPublish">نشر</button>
+          </div>
+        </div>
+        <div id="feed"></div>
+      </section>
+
+      <section id="otherPage" class="hidden"></section>
+    </main>
+
+    <aside class="right-panel">
+      <div class="glass-card">
+        <div class="panel-title"><i data-ico="users" data-s="18"></i> اكتشف أصدقاء</div>
+        <div id="suggestions" class="muted"></div>
+        <button class="panel-more" data-page="friends">عرض المزيد</button>
+      </div>
+    </aside>
+  </div>
+
+  <nav class="mobile-nav">
+    <button class="active" data-page="home"><i data-ico="home" data-s="22"></i><span>الرئيسية</span></button>
+    <button data-page="reels"><i data-ico="reel" data-s="22"></i><span>ريلز</span></button>
+    <button data-page="rooms"><i data-ico="mic" data-s="22"></i><span>غرف</span></button>
+    <button data-page="messages"><i data-ico="msg" data-s="22"></i><span>الرسائل</span></button>
+    <button data-page="friends"><i data-ico="users" data-s="22"></i><span>الأصدقاء</span></button>
+    <button data-page="profile"><i data-ico="user" data-s="22"></i><span>حسابي</span></button>
+  </nav>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastBox"></div>
+
+<script>
+// ================= SETUP (قاعدة البيانات كما هي) =================
+const SUPABASE_URL = 'https://mzghenvgjweconmresjo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_xqeR3GoMGLuzd7s_Ldf_pQ_mEHGbYg-';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const $ = id => document.getElementById(id);
+const SHIELD_IMG = 'https://l.top4top.io/p_3951xzwbq0.png';
+let me = null, selectedMediaFile = null, profileCache = {}, activeReels = [], currentChatUser = null;
+let messageChannel = null, currentPage = 'home';
+let mediaRecorder = null, audioChunks = [];
+const postCache = {}, storyGroups = {};
+
+// ================= ICONS =================
+const ICONS = {
+  home:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  msg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  reel:'<rect x="2" y="2" width="20" height="20" rx="5"/><polygon points="10 8 16 12 10 16 10 8"/>',
+  users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
+  search:'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  bell:'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+  heart:'<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>',
+  comment:'<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+  share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>',
+  image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',
+  phone:'<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>',
+  video:'<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>',
+  mic:'<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/>',
+  send:'<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+  x:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  back:'<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+  plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  more:'<circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/>',
+  trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
+  camera:'<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+  grid:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
+  check:'<polyline points="20 6 9 17 4 12"/>',
+  mutemic:'<line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/>',
+  camoff:'<path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"/><line x1="1" y1="1" x2="23" y2="23"/>'
+};
+function ico(n, s = 20) { return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[n] || ''}</svg>`; }
+function hydrateIcons(root = document) { root.querySelectorAll('[data-ico]').forEach(el => { if (!el.firstChild) el.innerHTML = ico(el.dataset.ico, +el.dataset.s || 20); }); }
+hydrateIcons();
+
+// ================= UTILS =================
+function toast(msg) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; $('toastBox').appendChild(t); setTimeout(() => t.remove(), 3000); }
+function esc(str) { return String(str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function timeAgo(d) { const s=(Date.now()-new Date(d).getTime())/1000; if(s<60)return'الآن'; if(s<3600)return`منذ ${Math.floor(s/60)}د`; if(s<86400)return`منذ ${Math.floor(s/3600)}س`; return`منذ ${Math.floor(s/86400)}ي`; }
+function avatarHtml(p) {
+  if(!p) return `<div class="avatar">و</div>`;
+  const clickAttr = p.id ? `onclick="event.stopPropagation(); viewUserProfile('${p.id}')"` : '';
+  const inner = `<div class="avatar" ${clickAttr}>${p.avatar_url ? `<img src="${esc(p.avatar_url)}" alt="">` : esc(p.full_name?.[0] || 'و')}</div>`;
+  return p.frame === 'shield' ? `<div class="av-frame" ${clickAttr}>${inner}<img class="av-ring" src="${SHIELD_IMG}" alt=""></div>` : inner;
+}
+const loaderHtml = '<div class="loader"></div>';
+const emptyHtml = (icon, text) => `<div class="empty"><div class="e-ico">${ico(icon, 28)}</div><div>${text}</div></div>`;
+
+const BAD_WORDS_REGEX = /(ك\s*س\s*م|ش\s*ر\s*م\s*و\s*ط|ع\s*ر\s*ص|خ\s*و\s*ل|ن\s*ي\s*ك|ط\s*ي\s*ز|ز\s*ب\s*ي|ق\s*ح\s*ب\s*ة|م\s*ت\s*ن\s*ا\s*ك|ا\s*ب\s*ن\s*ا\s*ل\s*ك\s*ل\s*ب|ح\s*ي\s*و\s*ا\s*ن|ا\s*ب\s*ت\s*ز\s*ا\s*ز)/i;
+function moderateText(text) { if (!text) return { ok: true }; if (BAD_WORDS_REGEX.test(text)) return { ok: false, reason: '⚠️ يرجى الالتزام بالآداب العامة.' }; return { ok: true }; }
+
+// ================= AUTH & BOOT =================
+function setAuthMode(signup) {
+  $('tabLogin').classList.toggle('active', !signup);
+  $('tabSignup').classList.toggle('active', signup);
+  $('nameGroup').classList.toggle('hidden', !signup);
+  $('btnLogin').classList.toggle('hidden', signup);
+  $('btnSignup').classList.toggle('hidden', !signup);
+}
+$('tabLogin').onclick = () => setAuthMode(false);
+$('tabSignup').onclick = () => setAuthMode(true);
+['authEmail', 'authPassword', 'authName'].forEach(id => $(id).addEventListener('keypress', e => {
+  if (e.key === 'Enter') ($('btnLogin').classList.contains('hidden') ? $('btnSignup') : $('btnLogin')).click();
+}));
+
+$('btnLogin').onclick = async () => {
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email: $('authEmail').value, password: $('authPassword').value });
+  if (error) return toast('خطأ: ' + error.message); initApp(data.session);
+};
+$('btnSignup').onclick = async () => {
+  const name = $('authName').value.trim(); if (!name) return toast('أدخل اسمك');
+  const { data, error } = await supabaseClient.auth.signUp({ email: $('authEmail').value, password: $('authPassword').value, options: { data: { full_name: name } } });
+  if (error) return toast('خطأ: ' + error.message);
+  if (data.session) { await supabaseClient.from('profiles').insert({ id: data.user.id, full_name: name }); initApp(data.session); }
+  else toast('تحقق من بريدك الإلكتروني لتأكيد الحساب ✉️');
+};
+supabaseClient.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') { $('appScreen').classList.add('hidden'); $('authScreen').classList.remove('hidden'); } });
+
+function renderSideUser() {
+  $('sideUser').innerHTML = `${avatarHtml(me)}<div style="min-width:0"><strong>${esc(me.full_name)} ${me.is_verified ? '<span class="verified-badge"></span>' : ''}</strong><span>@${esc(me.username || 'user_' + String(me.id).substring(0,4))}</span></div>`;
+}
+function updateIdentity() {
+  ['headerAvatar', 'composerAvatar'].forEach(id => { const el = $(id); if (el) (el.closest('.av-frame') || el).outerHTML = avatarHtml(me).replace('class="avatar"', `class="avatar" id="${id}"`); });
+  renderSideUser();
+}
+
+async function initApp(session) {
+  if (!session) return;
+  $('authScreen').classList.add('hidden'); $('appScreen').classList.remove('hidden');
+  const { data } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
+  me = data || { id: session.user.id, full_name: 'مستخدم' };
+  updateIdentity();
+  loadStories(); loadFeed(); loadSuggestions();
+  listenForIncomingCalls();
+  initPush();
+  checkAdmin();
+  setTimeout(handleLaunchParams, 700);
+}
+supabaseClient.auth.getSession().then(({ data }) => { if (data.session) initApp(data.session); });
+
+// ================= NAVIGATION =================
+function setActiveNav(page) {
+  document.querySelectorAll('[data-page]').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll(`[data-page="${page}"]`).forEach(b => b.classList.add('active'));
+}
+document.querySelectorAll('[data-page]').forEach(btn => {
+  btn.onclick = () => {
+    const page = btn.dataset.page;
+    if (page === 'reels') { setActiveNav('reels'); openFullscreenReels(); return; }
+    if (page === 'rooms') { renderRoomsPage(); return; }
+    if (page === 'admin') { renderAdmin(); return; }
+    stopRoomWatchers();
+    currentPage = page;
+    setActiveNav(page);
+    $('homePage').classList.toggle('hidden', page !== 'home');
+    $('otherPage').classList.toggle('hidden', page === 'home');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (page === 'messages') renderMessages();
+    if (page === 'friends') renderFriendsPage();
+    if (page === 'profile') renderProfile(me.id);
+  };
+});
+
+// ================= SUGGESTIONS =================
+async function loadSuggestions() {
+  const container = $('suggestions');
+  container.innerHTML = loaderHtml;
+  const { data: friendships } = await supabaseClient.from('friendships').select('requester_id, addressee_id, status').or(`requester_id.eq.${me.id},addressee_id.eq.${me.id}`);
+  const relatedIds = new Set();
+  if (friendships) friendships.forEach(f => relatedIds.add(f.requester_id === me.id ? f.addressee_id : f.requester_id));
+  const excludedIds = [me.id, ...Array.from(relatedIds)];
+  const { data: profiles, error } = await supabaseClient.from('profiles').select('*').not('id', 'in', `(${excludedIds.join(',')})`).limit(5);
+  if (error || !profiles || profiles.length === 0) { container.innerHTML = '<div class="muted" style="text-align:center;padding:10px 0 4px">لا توجد اقتراحات حالياً.</div>'; return; }
+  container.innerHTML = profiles.map(p => {
+    profileCache[p.id] = p;
+    return `
+    <div class="suggestion-row">
+      ${avatarHtml(p)}
+      <div class="suggestion-info" onclick="viewUserProfile('${p.id}')">
+        <strong>${esc(p.full_name)} ${p.is_verified ? '<span class="verified-badge"></span>' : ''}</strong>
+        <span>@${esc(p.username || 'user')}</span>
+      </div>
+      <button class="btn-suggest-add" onclick="sendFriendRequest('${p.id}', this)">إضافة</button>
+    </div>`;
+  }).join('');
+}
+
+// ================= CHAT =================
+async function renderMessages() {
+  const host = $('otherPage');
+  host.className = 'fade-in';
+  host.innerHTML = `
+    <div class="chat-container">
+      <div class="chat-sidebar active" id="chatSidebarContainer">
+        <div class="chat-header-top">
+          <h2>الدردشات</h2>
+          <div class="chat-search">${ico('search', 18)}<input type="text" id="chatFilter" placeholder="ابحث في المحادثات..."></div>
+        </div>
+        <div class="chat-list-inner" id="chatList">${loaderHtml}</div>
+      </div>
+      <div class="chat-window" id="chatWindowContainer">
+        <div class="chat-header">
+          <button class="back-btn-chat" onclick="document.getElementById('chatSidebarContainer').classList.add('active'); document.getElementById('chatWindowContainer').classList.remove('active');">${ico('back', 20)}</button>
+          <div id="chatHead" style="flex:1;color:var(--muted);font-weight:600;">اختر شخصاً للمحادثة</div>
+          <div class="chat-header-actions" id="chatHeaderActions" style="display:none;">
+            <button onclick="startCall(false)" title="مكالمة صوتية">${ico('phone', 19)}</button>
+            <button onclick="startCall(true)" title="مكالمة فيديو">${ico('video', 19)}</button>
+          </div>
+        </div>
+        <div class="chat-messages" id="chatMsgs">
+          <div class="chat-placeholder">${emptyHtml('msg', 'اختر صديقاً لبدء المحادثة')}</div>
+        </div>
+        <div class="quick-replies" id="quickReplies" style="display:none;">
+          <button class="quick-reply-btn" onclick="sendQuickReply('مرحباً 👋')">مرحباً 👋</button>
+          <button class="quick-reply-btn" onclick="sendQuickReply('كيف حالك؟')">كيف حالك؟</button>
+          <button class="quick-reply-btn" onclick="sendQuickReply('رائع!')">رائع!</button>
+        </div>
+        <div class="chat-input">
+          <button class="mic-btn" id="micBtn" onclick="toggleRecording()" title="تسجيل صوتي">${ico('mic', 20)}</button>
+          <input type="text" id="chatInput" placeholder="اكتب رسالة..." disabled onkeypress="if(event.key==='Enter') sendMessage()">
+          <button class="send-btn" id="chatSend" disabled onclick="sendMessage()">${ico('send', 19)}</button>
+        </div>
+      </div>
+    </div>`;
+
+  const { data: profiles } = await supabaseClient.from('profiles').select('*').neq('id', me.id).limit(50);
+  if (!profiles || profiles.length === 0) return $('chatList').innerHTML = emptyHtml('users', 'لا يوجد مستخدمون آخرون بعد.');
+  profiles.forEach(p => profileCache[p.id] = p);
+
+  const renderList = (users) => {
+    $('chatList').innerHTML = users.length ? users.map(p => `
+      <div class="chat-person ${p.id === currentChatUser ? 'active' : ''}" data-id="${p.id}" onclick="openChat('${p.id}', this)">
+        ${avatarHtml(p)}
+        <div class="chat-person-info">
+          <div class="chat-person-name">${esc(p.full_name)} ${p.is_verified ? '<span class="verified-badge"></span>' : ''}</div>
+          <div class="chat-person-msg">@${esc(p.username || 'user')} · ابدأ المحادثة</div>
+        </div>
+      </div>`).join('') : '<div class="muted" style="text-align:center;padding:20px">لا نتائج.</div>';
+  };
+  renderList(profiles);
+  $('chatFilter').oninput = e => {
+    const q = e.target.value.trim().toLowerCase();
+    renderList(profiles.filter(p => (p.full_name || '').toLowerCase().includes(q) || (p.username || '').toLowerCase().includes(q)));
+  };
+}
+
+window.openChat = async (uid, el) => {
+  currentChatUser = uid;
+  if (!$('chatWindowContainer')) return;
+  if (window.innerWidth <= 820) {
+    $('chatSidebarContainer').classList.remove('active');
+    $('chatWindowContainer').classList.add('active');
+  }
+  document.querySelectorAll('.chat-person').forEach(x => x.classList.toggle('active', x.dataset.id === uid));
+
+  const p = profileCache[uid] || {full_name: 'مستخدم'};
+  $('chatHead').style.color = '';
+  $('chatHead').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;">
+      ${avatarHtml(p)}
+      <div class="chat-header-info" onclick="viewUserProfile('${uid}')">
+        <div class="name">${esc(p.full_name)} ${p.is_verified ? '<span class="verified-badge"></span>' : ''}</div>
+        <div class="status">@${esc(p.username || 'user')}</div>
+      </div>
+    </div>`;
+  $('chatHeaderActions').style.display = 'flex';
+  $('chatInput').disabled = false;
+  $('chatSend').disabled = false;
+  $('quickReplies').style.display = 'flex';
+
+  const fetchMsgs = async () => {
+    const { data: msgs, error } = await supabaseClient.from('messages')
+      .select('*')
+      .or(`and(sender_id.eq.${me.id},receiver_id.eq.${uid}),and(sender_id.eq.${uid},receiver_id.eq.${me.id})`)
+      .order('created_at', { ascending: true });
+    if (error) { toast('تعذر تحميل الرسائل: ' + error.message); return; }
+    if (currentChatUser !== uid || !$('chatMsgs')) return;
+    if (!msgs.length) { $('chatMsgs').innerHTML = `<div class="chat-placeholder">${emptyHtml('msg', 'لا رسائل بعد — قل مرحباً 👋')}</div>`; return; }
+    $('chatMsgs').innerHTML = msgs.map(m => {
+      let contentHTML = esc(m.content);
+      if (m.content.startsWith('AUDIO_URL::')) contentHTML = `<audio controls src="${m.content.replace('AUDIO_URL::', '')}"></audio>`;
+      return `
+      <div class="msg-bubble ${m.sender_id === me.id ? 'me' : 'them'}">
+        ${contentHTML}
+        <span class="msg-time">${new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+      </div>`;
+    }).join('');
+    $('chatMsgs').scrollTop = $('chatMsgs').scrollHeight;
+  };
+  await fetchMsgs();
+
+  if (messageChannel) supabaseClient.removeChannel(messageChannel);
+  messageChannel = supabaseClient.channel('chat-'+me.id+'-'+uid)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+      const m = payload.new;
+      if ((m.sender_id === me.id && m.receiver_id === uid) || (m.sender_id === uid && m.receiver_id === me.id)) fetchMsgs();
+    })
+    .subscribe();
+
+};
+
+window.sendMessage = async () => {
+  const val = $('chatInput').value.trim(); if (!val || !currentChatUser) return;
+  if (!moderateText(val).ok) return toast('الرسالة تحتوي على كلمات ممنوعة.');
+  $('chatSend').disabled = true;
+  $('chatInput').value = '';
+  const ph = $('chatMsgs').querySelector('.chat-placeholder'); if (ph) ph.remove();
+  $('chatMsgs').insertAdjacentHTML('beforeend', `<div class="msg-bubble me">${esc(val)}<span class="msg-time">الآن</span></div>`);
+  $('chatMsgs').scrollTop = $('chatMsgs').scrollHeight;
+  const { error } = await supabaseClient.from('messages').insert({ sender_id: me.id, receiver_id: currentChatUser, content: val });
+  $('chatSend').disabled = false;
+  if (error) { toast('فشل حفظ الرسالة: ' + error.message); $('chatInput').value = val; }
+};
+window.sendQuickReply = (text) => { $('chatInput').value = text; $('chatSend').click(); };
+
+window.toggleRecording = async () => {
+  const micBtn = $('micBtn');
+  if (!currentChatUser) return toast('اختر محادثة أولاً');
+  if (mediaRecorder && mediaRecorder.state === 'recording') { mediaRecorder.stop(); micBtn.classList.remove('recording'); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      audioChunks = [];
+      stream.getTracks().forEach(track => track.stop());
+      toast('جاري رفع الرسالة الصوتية...');
+      const fileName = `audio_${Date.now()}.webm`;
+      const { error } = await supabaseClient.storage.from('post-images').upload(fileName, audioBlob);
+      if (error) return toast('فشل رفع الصوت: ' + error.message);
+      const { data } = supabaseClient.storage.from('post-images').getPublicUrl(fileName);
+      await supabaseClient.from('messages').insert({ sender_id: me.id, receiver_id: currentChatUser, content: `AUDIO_URL::${data.publicUrl}` });
+    };
+    mediaRecorder.start();
+    micBtn.classList.add('recording');
+    toast('جاري التسجيل... اضغط مرة أخرى للإيقاف');
+  } catch (err) { toast('يرجى السماح بالوصول للميكروفون.'); }
+};
+
+// ================= CALLS (مكالمات صوت وفيديو) =================
+// تسلسل المكالمة: ring ← ready ← offer ← answer ← end
+// كل الإشارات تمر عبر قنوات مشتركة (subscribed) وتُرسل بعد اكتمال ICE لتجنب فقدان المرشحين
+const RTC_CALL_CONFIG = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+  ]
+};
+let call = null, userCh = null;
+const pairIdOf = (a, b) => [a, b].sort().join('_');
+const descOf = pc => ({ type: pc.localDescription.type, sdp: pc.localDescription.sdp });
+
+function listenForIncomingCalls() {
+  if (userCh) return;
+  userCh = supabaseClient.channel('user-' + me.id)
+    .on('broadcast', { event: 'ring' }, ({ payload }) => { if (payload.to === me.id) onRing(payload); })
+    .subscribe();
+}
+
+function openPairChannel(c) {
+  const ch = supabaseClient.channel('call-' + c.id);
+  ch.on('broadcast', { event: 'sig' }, ({ payload }) => { if (call === c) onSig(payload); })
+    .subscribe(status => {
+      if (status === 'SUBSCRIBED' && c.role === 'callee') {
+        // المستقبل يعلن جاهزيته مرات متكررة حتى تصل إشارة العرض (offer) لضمان عدم ضياع الرسالة
+        const beat = () => { if (call !== c || c.gotOffer) return; ch.send({ type: 'broadcast', event: 'sig', payload: { kind: 'ready' } }); c.readyTimer = setTimeout(beat, 1500); };
+        beat();
+      }
+    });
+  return ch;
+}
+
+function sendSig(c, payload) {
+  c.pairCh?.send({ type: 'broadcast', event: 'sig', payload });
+}
+
+async function onRing(p) {
+  if (call) return; // مشغول
+  call = { id: pairIdOf(me.id, p.from), peer: p.from, isVideo: !!p.isVideo, role: 'callee',
+           pc: null, stream: null, pairCh: null, accepted: false, answered: false, offer: null, muted: false, camOff: false };
+  const c = call;
+  if (!profileCache[p.from]) {
+    const { data } = await supabaseClient.from('profiles').select('*').eq('id', p.from).maybeSingle();
+    if (data) profileCache[data.id] = data;
+  }
+  showCallOverlay('مكالمة واردة…', profileCache[p.from] || { full_name: p.name || 'مستخدم' });
+  c.pairCh = openPairChannel(c);
+  c.timeout = setTimeout(() => { if (call === c && !c.accepted) { sendSig(c, { kind: 'end' }); endCall(false); } }, 45000);
+}
+
+window.startCall = async (isVideo) => {
+  if (!currentChatUser) return toast('اختر محادثة أولاً');
+  if (call) return toast('هناك مكالمة جارية بالفعل');
+  const peer = currentChatUser;
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideo }); }
+  catch (e) { return toast('تعذر الوصول للميكروفون أو الكاميرا. تأكد من الصلاحيات.'); }
+  call = { id: pairIdOf(me.id, peer), peer, isVideo: !!isVideo, role: 'caller', pc: null, stream,
+           pairCh: null, accepted: true, connected: false, muted: false, camOff: false };
+  const c = call;
+  if (!profileCache[peer]) {
+    const { data } = await supabaseClient.from('profiles').select('*').eq('id', peer).maybeSingle();
+    if (data) profileCache[data.id] = data;
+  }
+  showCallOverlay('جارٍ الاتصال…', profileCache[peer] || { full_name: 'مستخدم' });
+  c.pairCh = openPairChannel(c);
+  c.timeout = setTimeout(() => { if (call === c && !c.connected) { toast('لم يرد المستخدم'); endCall(true); } }, 45000);
+
+  // إرسال إشعار الرنين عبر قناة المستخدم المستهدف
+  const ring = supabaseClient.channel('user-' + peer);
+  ring.subscribe(async status => {
+    if (status === 'SUBSCRIBED') {
+      await ring.send({ type: 'broadcast', event: 'ring', payload: { to: peer, from: me.id, isVideo: !!isVideo, name: me.full_name } });
+      setTimeout(() => supabaseClient.removeChannel(ring), 400);
+    }
+  });
+};
+
+async function onSig(p) {
+  const c = call; if (!c) return;
+  try {
+    if (p.kind === 'ready' && c.role === 'caller' && !c.offered) {
+      c.offered = true;
+      c.pc = makePC(c);
+      c.stream.getTracks().forEach(t => c.pc.addTrack(t, c.stream));
+      await c.pc.setLocalDescription(await c.pc.createOffer());
+      await waitIce(c.pc);
+      sendSig(c, { kind: 'offer', sdp: descOf(c.pc) });
+    } else if (p.kind === 'offer' && c.role === 'callee' && !c.gotOffer) {
+      c.gotOffer = true;
+      clearTimeout(c.readyTimer);
+      c.offer = p.sdp;
+      if (c.stream && !c.answered) await makeAnswer(c);
+    } else if (p.kind === 'answer' && c.role === 'caller' && c.pc) {
+      await c.pc.setRemoteDescription(p.sdp);
+    } else if (p.kind === 'end') {
+      endCall(false);
+      toast('انتهت المكالمة');
+    }
+  } catch (e) {
+    console.warn('call signal', e);
+    toast('تعذر إتمام المكالمة');
+    endCall(true);
+  }
+}
+
+function makePC(c) {
+  const pc = new RTCPeerConnection(RTC_CALL_CONFIG);
+  pc.ontrack = e => {
+    const rv = $('callRemote');
+    if (rv) { rv.srcObject = e.streams[0]; rv.play?.().catch(() => {}); }
+    if (c.isVideo && $('callVoice')) $('callVoice').style.display = 'none';
+  };
+  pc.onconnectionstatechange = () => {
+    if (call !== c) return;
+    if (pc.connectionState === 'connected') { c.connected = true; setCallStatus('متصل'); }
+    if (pc.connectionState === 'failed') { toast('فشل الاتصال بين الجهازين'); endCall(true); }
+  };
+  return pc;
+}
+
+function waitIce(pc) {
+  return new Promise(res => {
+    if (pc.iceGatheringState === 'complete') return res();
+    const t = setTimeout(res, 5000);
+    pc.addEventListener('icegatheringstatechange', () => {
+      if (pc.iceGatheringState === 'complete') { clearTimeout(t); res(); }
+    });
+  });
+}
+
+async function makeAnswer(c) {
+  c.answered = true;
+  c.pc = makePC(c);
+  c.stream.getTracks().forEach(t => c.pc.addTrack(t, c.stream));
+  await c.pc.setRemoteDescription(c.offer);
+  await c.pc.setLocalDescription(await c.pc.createAnswer());
+  await waitIce(c.pc);
+  sendSig(c, { kind: 'answer', sdp: descOf(c.pc) });
+}
+
+window.acceptCall = async () => {
+  const c = call; if (!c || c.role !== 'callee' || c.accepted) return;
+  c.accepted = true;
+  clearTimeout(c.timeout);
+  try { c.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: c.isVideo }); }
+  catch (e) { toast('تعذر الوصول للميكروفون أو الكاميرا'); return rejectCall(); }
+  setCallStatus('جارٍ الاتصال…');
+  showCallOverlay('جارٍ الاتصال…', profileCache[c.peer] || { full_name: 'مستخدم' });
+  if (c.offer) await makeAnswer(c);
+};
+
+window.rejectCall = () => {
+  if (!call) return;
+  sendSig(call, { kind: 'end' });
+  endCall(false);
+};
+
+window.endCall = (notify = true) => {
+  const c = call; if (!c) return;
+  if (notify && c.pairCh) sendSig(c, { kind: 'end' });
+  call = null;
+  clearTimeout(c.timeout);
+  clearTimeout(c.readyTimer);
+  c.pc?.close();
+  c.stream?.getTracks().forEach(t => t.stop());
+  if (c.pairCh) { const ch = c.pairCh; setTimeout(() => supabaseClient.removeChannel(ch), 400); }
+  $('callOverlay')?.remove();
+};
+
+function setCallStatus(t) { const el = $('callStatus'); if (el) el.textContent = t; }
+
+function showCallOverlay(status, peer) {
+  let el = $('callOverlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'callOverlay';
+    el.className = 'call-modal';
+    document.body.appendChild(el);
+  }
+  const c = call;
+  const vid = c?.isVideo;
+  el.innerHTML = `
+    <div class="call-video-container">
+      <video id="callRemote" autoplay playsinline ${vid ? '' : 'style="display:none"'}></video>
+      <div class="call-voice" id="callVoice">
+        ${avatarHtml({ ...peer, id: null })}
+        <h2 style="font-size:24px;font-weight:900;margin-top:10px">${esc(peer.full_name || 'مستخدم')}</h2>
+        <p class="muted" id="callStatus">${esc(status)}</p>
+      </div>
+      <video id="callLocal" autoplay playsinline muted ${vid ? '' : 'style="display:none"'}></video>
+    </div>
+    <div class="call-controls" id="callControls"></div>`;
+  if (c?.stream && vid) { const lv = $('callLocal'); if (lv) lv.srcObject = c.stream; }
+  renderCallControls();
+}
+
+function renderCallControls() {
+  const box = $('callControls'); if (!box || !call) return;
+  if (call.role === 'callee' && !call.accepted) {
+    box.innerHTML = `
+      <button class="call-btn end" onclick="rejectCall()" title="رفض">${ico('x', 26)}</button>
+      <button class="call-btn accept" onclick="acceptCall()" title="قبول">${ico('phone', 26)}</button>`;
+    return;
+  }
+  box.innerHTML = `
+    <button class="call-btn ${call.muted ? 'off' : ''}" onclick="toggleMute()" title="كتم">${ico(call.muted ? 'mutemic' : 'mic', 24)}</button>
+    ${call.isVideo ? `<button class="call-btn ${call.camOff ? 'off' : ''}" onclick="toggleCam()" title="الكاميرا">${ico(call.camOff ? 'camoff' : 'video', 24)}</button>` : ''}
+    <button class="call-btn end" onclick="endCall(true)" title="إنهاء">${ico('phone', 24)}</button>`;
+}
+
+window.toggleMute = () => {
+  if (!call?.stream) return;
+  call.muted = !call.muted;
+  call.stream.getAudioTracks().forEach(t => (t.enabled = !call.muted));
+  renderCallControls();
+};
+window.toggleCam = () => {
+  if (!call?.stream) return;
+  call.camOff = !call.camOff;
+  call.stream.getVideoTracks().forEach(t => (t.enabled = !call.camOff));
+  renderCallControls();
+};
+
+
+// ================= FRIENDS =================
+async function renderFriendsPage() {
+  const host = $('otherPage');
+  host.className = 'fade-in';
+  host.innerHTML = `
+    <div class="friends-header"><h2>الأصدقاء</h2><p class="muted">تواصل مع من يهمك، واكتشف أصدقاء جدد.</p></div>
+    <div class="friends-tabs">
+      <div class="friends-tab active" onclick="switchFriendTab('requests', this)">طلبات الصداقة</div>
+      <div class="friends-tab" onclick="switchFriendTab('friends', this)">أصدقائي</div>
+      <div class="friends-tab" onclick="switchFriendTab('suggestions', this)">أشخاص قد تعرفهم</div>
+    </div>
+    <div id="friendListContainer">${loaderHtml}</div>`;
+
+  const { data: friendships } = await supabaseClient.from('friendships').select('*').or(`requester_id.eq.${me.id},addressee_id.eq.${me.id}`);
+  const allFriendships = friendships || [];
+  const incomingRequests = allFriendships.filter(f => f.addressee_id === me.id && f.status === 'pending');
+  const outgoingRequests = allFriendships.filter(f => f.requester_id === me.id && f.status === 'pending');
+  const friends = allFriendships.filter(f => f.status === 'accepted');
+  const friendIds = friends.map(f => f.requester_id === me.id ? f.addressee_id : f.requester_id);
+  const incomingIds = incomingRequests.map(f => f.requester_id);
+  const outgoingIds = outgoingRequests.map(f => f.addressee_id);
+
+  const relatedIds = [...new Set([...friendIds, ...incomingIds, ...outgoingIds])];
+  if (relatedIds.length) {
+    const { data: profiles } = await supabaseClient.from('profiles').select('*').in('id', relatedIds);
+    profiles?.forEach(p => profileCache[p.id] = p);
+  }
+  const excludedIds = [me.id, ...friendIds, ...incomingIds, ...outgoingIds];
+  const { data: suggestions } = await supabaseClient.from('profiles').select('*').not('id', 'in', `(${excludedIds.join(',')})`).limit(20);
+  suggestions?.forEach(p => profileCache[p.id] = p);
+
+  window.switchFriendTab = (tab, el) => {
+    document.querySelectorAll('.friends-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    const container = $('friendListContainer');
+    container.className = 'fade-in';
+    if (tab === 'requests') {
+      if (incomingRequests.length === 0) return container.innerHTML = emptyHtml('users', 'لا توجد طلبات صداقة جديدة.');
+      container.innerHTML = incomingRequests.map(req => {
+        const p = profileCache[req.requester_id] || { id: req.requester_id, full_name: 'مستخدم' };
+        return `<div class="friend-card">
+          ${avatarHtml(p)}
+          <div class="friend-info" onclick="viewUserProfile('${p.id}')"><strong>${esc(p.full_name)} ${p.is_verified ? '<span class="verified-badge"></span>' : ''}</strong><span class="muted small">يريد إضافتك</span></div>
+          <div class="friend-actions">
+            <button class="btn-accept" onclick="acceptFriend('${req.id}')">قبول</button>
+            <button class="btn-decline" onclick="rejectFriend('${req.id}')">رفض</button>
+          </div></div>`;
+      }).join('');
+    } else if (tab === 'friends') {
+      if (friends.length === 0) return container.innerHTML = emptyHtml('users', 'ليس لديك أصدقاء بعد.');
+      container.innerHTML = friends.map(f => {
+        const uid = f.requester_id === me.id ? f.addressee_id : f.requester_id;
+        const p = profileCache[uid] || { id: uid, full_name: 'مستخدم' };
+        return `<div class="friend-card">
+          ${avatarHtml(p)}
+          <div class="friend-info" onclick="viewUserProfile('${p.id}')"><strong>${esc(p.full_name)} ${p.is_verified ? '<span class="verified-badge"></span>' : ''}</strong><span class="muted small">صديق</span></div>
+          <div class="friend-actions"><button class="btn-add" onclick="goToChat('${uid}')">مراسلة</button></div></div>`;
+      }).join('');
+    } else if (tab === 'suggestions') {
+      if (!suggestions || suggestions.length === 0) return container.innerHTML = emptyHtml('users', 'لا توجد اقتراحات حالياً.');
+      container.innerHTML = suggestions.map(p => {
+        const isPending = outgoingIds.includes(p.id);
+        return `<div class="friend-card">
+          ${avatarHtml(p)}
+          <div class="friend-info" onclick="viewUserProfile('${p.id}')"><strong>${esc(p.full_name)} ${p.is_verified ? '<span class="verified-badge"></span>' : ''}</strong><span class="muted small">@${esc(p.username || 'user')}</span></div>
+          <div class="friend-actions">${isPending ? `<button class="btn-decline" disabled style="opacity:.5;">تم الإرسال</button>` : `<button class="btn-add" onclick="sendFriendRequest('${p.id}', this)">إضافة</button>`}</div></div>`;
+      }).join('');
+    }
+  };
+  switchFriendTab('requests', document.querySelector('.friends-tab'));
+}
+
+window.goToChat = (uid) => {
+  document.querySelector('.layout [data-page=messages], .mobile-nav [data-page=messages]').click();
+  setTimeout(() => openChat(uid), 400);
+};
+window.sendFriendRequest = async (targetId, btn) => {
+  const originalText = btn.textContent;
+  btn.textContent = '...'; btn.disabled = true;
+  const { error } = await supabaseClient.from('friendships').insert({ requester_id: me.id, addressee_id: targetId, status: 'pending' });
+  if (error) { toast('خطأ: ' + error.message); btn.textContent = originalText; btn.disabled = false; }
+  else { toast('تم إرسال الطلب ✨'); btn.outerHTML = `<button class="btn-decline" disabled style="opacity:.5;">تم الإرسال</button>`; loadSuggestions(); }
+};
+window.acceptFriend = async (reqId) => {
+  await supabaseClient.from('friendships').update({ status: 'accepted' }).eq('id', reqId);
+  toast('تم قبول الصداقة 💜'); renderFriendsPage(); loadSuggestions();
+};
+window.rejectFriend = async (reqId) => {
+  await supabaseClient.from('friendships').delete().eq('id', reqId);
+  toast('تم رفض الطلب'); renderFriendsPage();
+};
+window.viewUserProfile = async (userId) => {
+  if (userId === me.id) { document.querySelector('[data-page=profile]').click(); return; }
+  document.querySelectorAll('[data-page]').forEach(b => b.classList.remove('active'));
+  $('homePage').classList.add('hidden');
+  $('otherPage').classList.remove('hidden');
+  window.scrollTo({ top: 0 });
+  await renderProfile(userId);
+};
+
+// ================= PROFILE =================
+async function renderProfile(userId) {
+  const isMe = userId === me.id;
+  const host = $('otherPage');
+  host.className = 'fade-in';
+  host.innerHTML = loaderHtml;
+
+  let targetUser = profileCache[userId];
+  if (!targetUser || isMe) {
+    const { data } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
+    targetUser = data;
+    if (isMe && data) me = data;
+  }
+  if (!targetUser) return host.innerHTML = emptyHtml('user', 'المستخدم غير موجود.');
+  profileCache[userId] = targetUser;
+
+  const { data: posts } = await supabaseClient.from('posts').select('*').eq('author_id', userId).is('deleted_at', null).order('created_at', {ascending: false});
+  const postIds = posts?.map(p => p.id) || [];
+  const { data: media } = await supabaseClient.from('post_media').select('*').in('post_id', postIds);
+  const { count: friendsCount } = await supabaseClient.from('friendships').select('*', { count: 'exact', head: true }).or(`requester_id.eq.${userId},addressee_id.eq.${userId}`).eq('status', 'accepted');
+  let likesReceived = 0;
+  if (postIds.length) {
+    const { count } = await supabaseClient.from('likes').select('*', { count: 'exact', head: true }).in('post_id', postIds);
+    likesReceived = count || 0;
+  }
+
+  let friendStatus = 'none';
+  if (!isMe) {
+    const { data: f } = await supabaseClient.from('friendships').select('status').or(`and(requester_id.eq.${userId},addressee_id.eq.${me.id}),and(requester_id.eq.${me.id},addressee_id.eq.${userId})`).maybeSingle();
+    if (f) friendStatus = f.status;
+  }
+
+  const coverUrl = targetUser.cover_url || '';
+  const avatarUrl = targetUser.avatar_url || '';
+  const coverStyle = coverUrl ? `background-image:url('${coverUrl}')` : '';
+
+  const actionButtons = isMe ? `
+    <div class="tp-action-row">
+      <button class="tp-action-btn main" onclick="showEditProfileModal()">${ico('edit', 17)} تعديل الملف الشخصي</button>
+      <button class="tp-action-btn" onclick="openPrivacyModal()">${ico('shield', 17)} الخصوصية</button>${isAdminMe ? `<button class="tp-action-btn main" onclick="renderAdmin()">${ico('shield', 17)} لوحة المشرف</button>` : ''}
+    </div>` : `
+    <div class="tp-action-row">
+      <button class="tp-action-btn main" onclick="goToChat('${userId}')">${ico('msg', 17)} مراسلة</button>
+      ${friendStatus === 'accepted' ? `<button class="tp-action-btn" disabled>${ico('check', 17)} صديق</button>` :
+        friendStatus === 'pending' ? `<button class="tp-action-btn" disabled>طلب مرسل</button>` :
+        `<button class="tp-action-btn" onclick="sendFriendRequest('${userId}', this)">${ico('plus', 17)} إضافة صديق</button>`}
+    </div>`;
+
+  host.innerHTML = `
+    <div class="tp-container">
+      <div class="tp-cover ${isMe ? 'editable' : ''}" style="${coverStyle}" ${isMe ? `onclick="document.getElementById('coverUploadInput').click()"` : ''}>
+        ${isMe ? `<div class="cover-hint">${ico('camera', 20)} تغيير الغلاف</div><input type="file" id="coverUploadInput" accept="image/*" hidden onchange="uploadProfileImage(this.files[0], 'cover_url', 'cover')">` : ''}
+        ${isMe ? `<div class="tp-top-actions" onclick="event.stopPropagation()"><button class="tp-icon-btn" onclick="showEditProfileModal()" title="تعديل الملف">${ico('edit', 17)}</button></div>` : ''}
+      </div>
+      <div class="tp-avatar-wrap ${isMe ? 'editable' : ''}" ${isMe ? `onclick="document.getElementById('avatarUploadInput').click()"` : ''}>
+        ${targetUser.frame === 'shield' ? '<img class="av-ring" src="' + SHIELD_IMG + '" alt="">' : ''}
+        <div class="in">${avatarUrl ? `<img src="${avatarUrl}" alt="">` : `<div class="ph">${esc(targetUser.full_name?.[0] || 'و')}</div>`}</div>
+        ${isMe ? `<input type="file" id="avatarUploadInput" accept="image/*" hidden onchange="uploadProfileImage(this.files[0], 'avatar_url', 'avatar')">` : ''}
+      </div>
+
+      <div class="tp-info-section">
+        <div class="tp-name">${esc(targetUser.full_name)} ${targetUser.is_verified ? `<span class="verified-badge" title="حساب موثّق"></span>` : ''}</div>
+        <div class="tp-handle">@${esc(targetUser.username || 'user_' + String(targetUser.id).substring(0,4))}</div>
+        ${targetUser.bio || isMe ? `<div class="tp-bio ${isMe ? 'me' : ''}" ${isMe ? 'onclick="showEditProfileModal()"' : ''}>${targetUser.bio ? esc(targetUser.bio) : '+ أضف نبذة عنك'}</div>` : ''}
+        <div class="tp-stats">
+          <div class="tp-stat-item"><span class="tp-stat-num">${posts?.length || 0}</span><span class="tp-stat-label">منشورات</span></div>
+          <div class="tp-stat-item"><span class="tp-stat-num">${friendsCount || 0}</span><span class="tp-stat-label">أصدقاء</span></div>
+          <div class="tp-stat-item"><span class="tp-stat-num">${likesReceived}</span><span class="tp-stat-label">إعجابات</span></div>
+        </div>
+        ${actionButtons}
+      </div>
+
+      <div class="tp-tabs"><i data-ico="grid" data-s="18"></i> المنشورات <span>${posts?.length || 0}</span></div>
+      <div class="tp-grid">
+        ${posts?.length ? posts.map(p => {
+          const m = media?.find(x => x.post_id === p.id);
+          postCache[p.id] = p.content || '';
+          return `<div class="tp-grid-item" onclick="${m ? '' : `toast('${esc((p.content || '').substring(0, 50)).replace(/\n/g, ' ')}')`}">${m ? (m.media_type === 'video' ? `<video src="${m.media_url}" muted loop playsinline onmouseover="this.play()" onmouseout="this.pause()"></video><span class="tp-grid-vid">${ico('reel', 18)}</span>` : `<img src="${m.media_url}" alt="">`) : `<div class="tp-grid-text">${esc((p.content || 'منشور').substring(0, 60))}</div>`}</div>`;
+        }).join('') : `<div style="grid-column:1/-1">${emptyHtml('image', 'لا توجد منشورات بعد.')}</div>`}
+      </div>
+    </div>`;
+  hydrateIcons(host);
+}
+
+// ================= FEED & COMPOSER =================
+$('postMedia').onchange = (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  selectedMediaFile = file; const url = URL.createObjectURL(file);
+  $('mediaPreviewBox').classList.remove('hidden');
+  if (file.type.startsWith('video')) { $('previewVid').src = url; $('previewVid').classList.remove('hidden'); $('previewImg').classList.add('hidden'); }
+  else { $('previewImg').src = url; $('previewImg').classList.remove('hidden'); $('previewVid').classList.add('hidden'); }
+};
+window.clearMedia = () => { selectedMediaFile = null; $('postMedia').value = ''; $('mediaPreviewBox').classList.add('hidden'); };
+
+$('btnPublish').onclick = async () => {
+  const text = $('postText').value.trim();
+  if (!text && !selectedMediaFile) return toast('اكتب شيئاً أو أضف وسائط');
+  if (!moderateText(text).ok) return toast('المحتوى يحتوي على كلمات ممنوعة.');
+  const btn = $('btnPublish'); btn.disabled = true; btn.textContent = 'جاري النشر...';
+  try {
+    let mediaUrl = null, mediaType = null;
+    if (selectedMediaFile) {
+      mediaType = selectedMediaFile.type.startsWith('video') ? 'video' : 'image';
+      const path = `${me.id}/${Date.now()}.${selectedMediaFile.name.split('.').pop()}`;
+      const { error: upErr } = await supabaseClient.storage.from('post-images').upload(path, selectedMediaFile);
+      if (upErr) throw upErr;
+      const { data } = supabaseClient.storage.from('post-images').getPublicUrl(path);
+      mediaUrl = data.publicUrl;
+    }
+    const { data: post, error } = await supabaseClient.from('posts').insert({ author_id: me.id, content: text }).select().single();
+    if (error) throw error;
+    if (mediaUrl) await supabaseClient.from('post_media').insert({ post_id: post.id, uploader_id: me.id, media_url: mediaUrl, media_type: mediaType });
+    $('postText').value = ''; clearMedia(); toast('تم النشر بنجاح 💜'); loadFeed();
+  } catch (err) { toast('فشل النشر: ' + err.message); }
+  finally { btn.disabled = false; btn.textContent = 'نشر'; }
+};
+
+async function loadFeed() {
+  const feed = $('feed'); feed.innerHTML = loaderHtml;
+  const { data: posts } = await supabaseClient.from('posts').select('*').is('deleted_at', null).order('created_at', { ascending: false }).limit(20);
+  if (!posts || posts.length === 0) return feed.innerHTML = `<div class="glass-card">${emptyHtml('image', 'لا توجد منشورات بعد — كن أول من ينشر!')}</div>`;
+  const { data: media } = await supabaseClient.from('post_media').select('*').in('post_id', posts.map(p => p.id));
+  const { data: likes } = await supabaseClient.from('likes').select('*').in('post_id', posts.map(p => p.id));
+  const uids = [...new Set(posts.map(p => p.author_id))];
+  const { data: profiles } = await supabaseClient.from('profiles').select('*').in('id', uids);
+  profiles.forEach(p => profileCache[p.id] = p);
+
+  feed.innerHTML = posts.map(post => {
+    postCache[post.id] = post.content || '';
+    const author = profileCache[post.author_id] || { id: post.author_id, full_name: 'مستخدم' };
+    const m = media?.find(x => x.post_id === post.id);
+    const isOwner = post.author_id === me.id;
+    const menuBtn = isOwner ? `<button class="post-menu" onclick="openPostMenu('${post.id}')">${ico('more', 20)}</button>` : '';
+    const postLikes = likes?.filter(l => l.post_id === post.id) || [];
+    const isLiked = postLikes.some(l => l.user_id === me.id);
+    return `
+    <div class="glass-card post-card fade-in">
+      <div class="post-header">
+        ${avatarHtml(author)}
+        <div class="post-author" onclick="viewUserProfile('${author.id}')">
+          <div class="nm">${esc(author.full_name)} ${author.is_verified ? `<span class="verified-badge"></span>` : ''}</div>
+          <div class="muted" style="font-size:11.5px;">${timeAgo(post.created_at)}</div>
+        </div>
+        ${menuBtn}
+      </div>
+      ${post.content ? `<div class="post-text">${esc(post.content)}</div>` : ''}
+      ${m ? (m.media_type === 'video' ? `<video class="post-media" controls controlsList="nodownload" src="${m.media_url}"></video>` : `<img class="post-media" src="${m.media_url}" alt="" loading="lazy">`) : ''}
+      <div class="post-actions">
+        <div class="action-btn ${isLiked ? 'liked' : ''}" data-count="${postLikes.length}" onclick="togglePostLike('${post.id}', this)">${ico('heart', 20)}<span>${postLikes.length > 0 ? postLikes.length : 'إعجاب'}</span></div>
+        <div class="action-btn" onclick="showPostComments('${post.id}')">${ico('comment', 20)}<span>تعليق</span></div>
+        <div class="action-btn" onclick="sharePost('${post.id}')">${ico('share', 20)}<span>مشاركة</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function togglePostLike(postId, btn) {
+  const isLiked = btn.classList.contains('liked');
+  let count = parseInt(btn.dataset.count || '0');
+  if (isLiked) {
+    await supabaseClient.from('likes').delete().match({ post_id: postId, user_id: me.id });
+    btn.classList.remove('liked'); count = Math.max(0, count - 1);
+  } else {
+    await supabaseClient.from('likes').insert({ post_id: postId, user_id: me.id });
+    btn.classList.add('liked'); count++;
+  }
+  btn.dataset.count = count;
+  btn.querySelector('span').textContent = count > 0 ? count : 'إعجاب';
+}
+
+function showPostComments(postId) {
+  $('modalRoot').innerHTML = `<div class="modal-overlay" onclick="document.getElementById('modalRoot').innerHTML=''"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span>التعليقات</span><button class="modal-close" onclick="document.getElementById('modalRoot').innerHTML=''">${ico('x', 16)}</button></div><div class="comments-list" id="postCommentsList">${loaderHtml}</div><div style="display:flex; gap:8px;"><input type="text" id="postCommentInput" class="form-input" placeholder="أضف تعليقاً..." onkeypress="if(event.key==='Enter') addPostComment('${postId}')"><button class="btn-primary" style="width:auto; padding:0 20px; border-radius:14px;" onclick="addPostComment('${postId}')">إرسال</button></div></div></div>`;
+  const fetchComments = async () => {
+    const { data: comments } = await supabaseClient.from('comments').select('*').eq('post_id', postId).order('created_at', {ascending: true});
+    const list = $('postCommentsList'); if (!list) return;
+    if (!comments || comments.length === 0) return list.innerHTML = '<div class="muted" style="text-align:center;padding:16px">لا توجد تعليقات بعد.</div>';
+    const uids = [...new Set(comments.map(c => c.user_id || c.author_id))];
+    const { data: profiles } = await supabaseClient.from('profiles').select('*').in('id', uids);
+    profiles.forEach(p => profileCache[p.id] = p);
+    list.innerHTML = comments.map(c => {
+      const uid = c.user_id || c.author_id;
+      const p = profileCache[uid] || {full_name: 'مستخدم'};
+      return `<div class="comment-item">${avatarHtml(p)}<div class="text"><span class="name" onclick="document.getElementById('modalRoot').innerHTML=''; viewUserProfile('${uid}')">${esc(p.full_name)} ${p.is_verified ? '<span class="verified-badge"></span>' : ''}</span>${esc(c.content)}</div></div>`;
+    }).join('');
+    list.scrollTop = list.scrollHeight;
+  };
+  window.addPostComment = async (pid) => {
+    const text = $('postCommentInput').value.trim(); if (!text) return;
+    if (!moderateText(text).ok) return toast('تعليق ممنوع');
+    $('postCommentInput').value = '';
+    await supabaseClient.from('comments').insert({ post_id: pid, author_id: me.id, content: text });
+    fetchComments();
+  };
+  fetchComments();
+}
+
+async function sharePost(postId) {
+  try { await navigator.clipboard.writeText(`${location.origin}${location.pathname}#post-${postId}`); toast('تم نسخ رابط المنشور 🔗'); }
+  catch { toast('تعذر نسخ الرابط'); }
+}
+
+// ================= POST EDIT & DELETE =================
+window.openPostMenu = (postId) => {
+  $('modalRoot').innerHTML = `
+    <div class="modal-overlay" onclick="document.getElementById('modalRoot').innerHTML=''">
+      <div class="modal-content" onclick="event.stopPropagation()" style="padding:0; overflow:hidden; max-width:380px;">
+        <div class="post-options-list">
+          <button class="post-option-btn" onclick="editPostPrompt('${postId}')">${ico('edit', 19)} تعديل المنشور</button>
+          <button class="post-option-btn danger" onclick="deletePostPrompt('${postId}')">${ico('trash', 19)} حذف المنشور</button>
+          <button class="post-option-btn" onclick="document.getElementById('modalRoot').innerHTML=''">إلغاء</button>
+        </div>
+      </div>
+    </div>`;
+};
+window.editPostPrompt = (postId) => {
+  $('modalRoot').innerHTML = `
+    <div class="modal-overlay" onclick="document.getElementById('modalRoot').innerHTML=''">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header"><span>تعديل المنشور</span><button class="modal-close" onclick="document.getElementById('modalRoot').innerHTML=''">${ico('x', 16)}</button></div>
+        <textarea id="editPostContent" class="form-input" style="height:150px;">${esc(postCache[postId] || '')}</textarea>
+        <button class="btn-save" onclick="saveEditedPost('${postId}')">حفظ التعديلات</button>
+      </div>
+    </div>`;
+};
+window.saveEditedPost = async (postId) => {
+  const newContent = $('editPostContent').value.trim();
+  if (!moderateText(newContent).ok) return toast('نص ممنوع');
+  await supabaseClient.from('posts').update({ content: newContent }).eq('id', postId);
+  toast('تم التعديل ✏️'); $('modalRoot').innerHTML = ''; loadFeed(); if (currentPage === 'profile') renderProfile(me.id);
+};
+window.deletePostPrompt = async (postId) => {
+  if (confirm('هل أنت متأكد من حذف هذا المنشور نهائياً؟')) {
+    await supabaseClient.from('posts').delete().eq('id', postId);
+    toast('تم الحذف 🗑️'); $('modalRoot').innerHTML = ''; loadFeed(); if (currentPage === 'profile') renderProfile(me.id);
+  } else $('modalRoot').innerHTML = '';
+};
+
+// ================= SEARCH & NOTIFICATIONS =================
+function openSearchModal() {
+  $('modalRoot').innerHTML = `<div class="modal-overlay" onclick="document.getElementById('modalRoot').innerHTML=''"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span>البحث</span><button class="modal-close" onclick="document.getElementById('modalRoot').innerHTML=''">${ico('x', 16)}</button></div><input type="text" id="globalSearchInput" class="form-input" placeholder="ابحث بالاسم أو اسم المستخدم..." oninput="performGlobalSearch(this.value)" autofocus><div id="searchResultsList" style="margin-top:14px;display:flex;flex-direction:column;gap:4px;"></div></div></div>`;
+  setTimeout(() => $('globalSearchInput')?.focus(), 50);
+}
+let searchTimeout;
+async function performGlobalSearch(val) {
+  clearTimeout(searchTimeout);
+  const query = val.trim();
+  const list = $('searchResultsList');
+  if (!query) { list.innerHTML = ''; return; }
+  searchTimeout = setTimeout(async () => {
+    list.innerHTML = loaderHtml;
+    const { data: profiles } = await supabaseClient.from('profiles').select('*').neq('id', me.id).or(`full_name.ilike.%${query}%,username.ilike.%${query}%`).limit(10);
+    if (!profiles || profiles.length === 0) { list.innerHTML = '<div class="muted" style="text-align:center;padding:14px;">لا توجد نتائج مطابقة.</div>'; return; }
+    list.innerHTML = profiles.map(p => `
+      <div class="notif-item" onclick="document.getElementById('modalRoot').innerHTML=''; viewUserProfile('${p.id}');">
+        ${avatarHtml({ ...p, id: null })}
+        <div class="notif-text"><strong style="display:block;">${esc(p.full_name)} ${p.is_verified ? '<span class="verified-badge"></span>' : ''}</strong><span class="muted small">@${esc(p.username || 'user')}</span></div>
+        <span style="color:var(--primary-2);font-size:13px;font-weight:800;">عرض</span>
+      </div>`).join('');
+  }, 400);
+}
+
+async function openNotifications() {
+  $('notifDot').classList.add('hidden');
+  $('modalRoot').innerHTML = `<div class="modal-overlay" onclick="document.getElementById('modalRoot').innerHTML=''"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span>الإشعارات</span><button class="modal-close" onclick="document.getElementById('modalRoot').innerHTML=''">${ico('x', 16)}</button></div><div id="notifList">${loaderHtml}</div></div></div>`;
+  const { data: myPosts } = await supabaseClient.from('posts').select('id, content').eq('author_id', me.id);
+  if (!myPosts || myPosts.length === 0) return $('notifList').innerHTML = emptyHtml('bell', 'لا توجد إشعارات حالياً.');
+  const postIds = myPosts.map(p => p.id);
+  const { data: likes } = await supabaseClient.from('likes').select('*').in('post_id', postIds).neq('user_id', me.id).order('created_at', {ascending: false}).limit(10);
+  const { data: comments } = await supabaseClient.from('comments').select('*').in('post_id', postIds).neq('author_id', me.id).order('created_at', {ascending: false}).limit(10);
+
+  const allNotifs = [];
+  const uids = [...new Set([...(likes||[]).map(l=>l.user_id), ...(comments||[]).map(c=>c.author_id)])];
+  if (uids.length) {
+    const { data: profiles } = await supabaseClient.from('profiles').select('*').in('id', uids);
+    profiles.forEach(p => profileCache[p.id] = p);
+  }
+  (likes||[]).forEach(l => allNotifs.push({ type: 'like', user: profileCache[l.user_id], time: l.created_at }));
+  (comments||[]).forEach(c => allNotifs.push({ type: 'comment', user: profileCache[c.author_id], time: c.created_at, comment: c.content }));
+  allNotifs.sort((a,b) => new Date(b.time) - new Date(a.time));
+  const valid = allNotifs.filter(n => n.user);
+  if (valid.length === 0) return $('notifList').innerHTML = emptyHtml('bell', 'لا توجد إشعارات جديدة.');
+  $('notifList').innerHTML = valid.slice(0, 15).map(n => `
+    <div class="notif-item" onclick="document.getElementById('modalRoot').innerHTML=''; viewUserProfile('${n.user.id}');">
+      ${avatarHtml({ ...n.user, id: null })}
+      <div class="notif-text"><strong>${esc(n.user.full_name || 'مستخدم')} ${n.user.is_verified ? '<span class="verified-badge"></span>' : ''}</strong> ${n.type === 'like' ? 'أعجب بمنشورك.' : `علّق: "${esc(n.comment)}"`}<div class="notif-time">${timeAgo(n.time)}</div></div>
+    </div>`).join('');
+}
+
+// ================= REELS =================
+window.closeReels = () => {
+  const r = $('waslReelsContainer'); if (r) r.remove();
+  setActiveNav(currentPage);
+};
+async function openFullscreenReels() {
+  const old = $('waslReelsContainer'); if (old) old.remove();
+  const container = document.createElement('div');
+  container.id = 'waslReelsContainer';
+  container.className = 'reels-overlay-container';
+  container.innerHTML = `<div style="color:#fff;height:100vh;display:grid;place-items:center;">${loaderHtml}</div>`;
+  document.body.appendChild(container);
+
+  const { data: reels } = await supabaseClient.from('reels').select('*').order('created_at', {ascending: false});
+  activeReels = reels || [];
+
+  if (activeReels.length === 0) {
+    container.innerHTML = `<div style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;background:radial-gradient(circle at 50% 30%,#2a1a52,#000 70%);gap:6px;"><div class="logo-mark" style="margin-bottom:10px">${ico('reel', 34)}</div><h2 style="margin-bottom:16px;font-weight:900;">لا توجد ريلز بعد</h2><label for="reelUploadInput" class="btn-primary" style="width:auto;padding:12px 30px;cursor:pointer;">${ico('plus', 18)} إضافة ريل جديد</label><input type="file" id="reelUploadInput" accept="video/*" hidden><button onclick="closeReels()" style="margin-top:18px;color:#aaa;text-decoration:underline;">رجوع</button></div>`;
+    $('reelUploadInput').onchange = handleReelUpload; return;
+  }
+
+  const uids = [...new Set(activeReels.map(r => r.user_id))];
+  const { data: profiles } = await supabaseClient.from('profiles').select('*').in('id', uids);
+  profiles?.forEach(p => profileCache[p.id] = p);
+  const { data: likes } = await supabaseClient.from('reel_likes').select('*').in('reel_id', activeReels.map(r => r.id));
+  const { data: commentsCount } = await supabaseClient.from('reel_comments').select('reel_id').in('reel_id', activeReels.map(r => r.id));
+
+  container.innerHTML = `
+    <div class="reel-add"><label for="reelUploadInput">${ico('plus', 18)} إضافة ريل</label><input type="file" id="reelUploadInput" accept="video/*" hidden></div>
+    ${activeReels.map((r, index) => {
+      const p = profileCache[r.user_id] || {full_name:'مستخدم'};
+      const rLikes = likes?.filter(l => l.reel_id === r.id) || [];
+      const isLiked = rLikes.some(l => l.user_id === me.id);
+      const cCount = commentsCount?.filter(c => c.reel_id === r.id).length || 0;
+      return `
+      <div class="reel-slide">
+        <video class="reel-video" src="${r.video_url}" loop playsinline controlsList="nodownload" oncontextmenu="return false;" muted ${index === 0 ? 'autoplay' : ''}></video>
+        <div class="reel-gradient-overlay"></div>
+        <div class="reel-top-bar"><span>متابعة</span><span class="active">لك</span></div>
+        <button class="reel-close-btn" onclick="closeReels()">${ico('x', 22)}</button>
+        <div class="reel-side-actions">
+          <div class="reel-action-btn ${isLiked ? 'liked' : ''}" onclick="toggleReelLike('${r.id}', this)">
+            <div class="reel-action-icon">${ico('heart', 24)}</div><span>${rLikes.length}</span>
+          </div>
+          <div class="reel-action-btn" onclick="showReelComments('${r.id}')">
+            <div class="reel-action-icon">${ico('comment', 24)}</div><span>${cCount}</span>
+          </div>
+          <div class="reel-action-btn" onclick="navigator.clipboard.writeText('${r.video_url}'); toast('تم نسخ الرابط')">
+            <div class="reel-action-icon">${ico('share', 22)}</div><span>مشاركة</span>
+          </div>
+          <div class="reel-action-btn"><div class="reel-music-disc">🎵</div></div>
+        </div>
+        <div class="reel-bottom-info">
+          <div class="reel-user-row">
+            ${avatarHtml(p)}
+            <strong class="reel-user-name">@${esc(p.full_name)}</strong>
+          </div>
+          <p class="reel-caption">${esc(r.caption || 'ريل جديد على وَصْل ✨')}</p>
+          <div class="reel-tags">🎵 صوت أصلي - ${esc(p.full_name)}</div>
+        </div>
+      </div>`;
+    }).join('')}`;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const video = entry.target.querySelector('video');
+      if (entry.isIntersecting) { video.muted = false; video.play().catch(() => { video.muted = true; video.play(); }); }
+      else video.pause();
+    });
+  }, { threshold: 0.6 });
+  container.querySelectorAll('.reel-slide').forEach(el => observer.observe(el));
+  $('reelUploadInput').onchange = handleReelUpload;
+}
+
+async function handleReelUpload(e) {
+  const file = e.target.files[0]; if (!file) return;
+  toast('جاري رفع الفيديو...');
+  const path = `${me.id}/reel-${Date.now()}.${file.name.split('.').pop()}`;
+  try {
+    const { error } = await supabaseClient.storage.from('wasl-reels').upload(path, file);
+    if (error) throw error;
+    const { data } = supabaseClient.storage.from('wasl-reels').getPublicUrl(path);
+    await supabaseClient.from('reels').insert({ user_id: me.id, video_url: data.publicUrl, caption: 'ريل جديد' });
+    toast('تم نشر الريل! 🎬'); $('waslReelsContainer')?.remove(); openFullscreenReels();
+  } catch (err) { toast('خطأ: ' + err.message); }
+}
+
+// (دوال الإعجاب والتعليق على الريلز — تستخدم نفس جداول reel_likes / reel_comments)
+window.toggleReelLike = async (reelId, el) => {
+  const liked = el.classList.contains('liked');
+  const span = el.querySelector('span');
+  let n = parseInt(span.textContent) || 0;
+  if (liked) {
+    await supabaseClient.from('reel_likes').delete().match({ reel_id: reelId, user_id: me.id });
+    el.classList.remove('liked'); span.textContent = Math.max(0, n - 1);
+  } else {
+    await supabaseClient.from('reel_likes').insert({ reel_id: reelId, user_id: me.id });
+    el.classList.add('liked'); span.textContent = n + 1;
+  }
+};
+window.showReelComments = (reelId) => {
+  const wrap = document.createElement('div');
+  wrap.id = 'reelCommentsModal';
+  wrap.className = 'modal-overlay';
+  wrap.style.zIndex = 99999;
+  wrap.onclick = () => wrap.remove();
+  wrap.innerHTML = `<div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span>التعليقات</span><button class="modal-close" id="rcClose">${ico('x', 16)}</button></div><div class="comments-list" id="reelCommentsList">${loaderHtml}</div><div style="display:flex;gap:8px;"><input type="text" id="reelCommentInput" class="form-input" placeholder="أضف تعليقاً..."><button class="btn-primary" id="rcSend" style="width:auto;padding:0 20px;border-radius:14px;">إرسال</button></div></div>`;
+  document.body.appendChild(wrap);
+  $('rcClose').onclick = () => wrap.remove();
+  const load = async () => {
+    const { data: comments } = await supabaseClient.from('reel_comments').select('*').eq('reel_id', reelId).order('created_at', { ascending: true });
+    const list = $('reelCommentsList'); if (!list) return;
+    if (!comments || !comments.length) return list.innerHTML = '<div class="muted" style="text-align:center;padding:16px">لا توجد تعليقات بعد.</div>';
+    const uids = [...new Set(comments.map(c => c.user_id || c.author_id))];
+    const { data: profiles } = await supabaseClient.from('profiles').select('*').in('id', uids);
+    profiles?.forEach(p => profileCache[p.id] = p);
+    list.innerHTML = comments.map(c => {
+      const p = profileCache[c.user_id || c.author_id] || { full_name: 'مستخدم' };
+      return `<div class="comment-item">${avatarHtml({ ...p, id: null })}<div class="text"><span class="name">${esc(p.full_name)}</span>${esc(c.content)}</div></div>`;
+    }).join('');
+    list.scrollTop = list.scrollHeight;
+  };
+  $('rcSend').onclick = async () => {
+    const text = $('reelCommentInput').value.trim(); if (!text) return;
+    if (!moderateText(text).ok) return toast('تعليق ممنوع');
+    $('reelCommentInput').value = '';
+    await supabaseClient.from('reel_comments').insert({ reel_id: reelId, user_id: me.id, content: text });
+    load();
+  };
+  load();
+};
+
+// ================= STORIES =================
+async function loadStories() {
+  const { data: stories } = await supabaseClient.from('stories').select('*').gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false });
+  const container = $('storiesContainer');
+  container.innerHTML = `<div class="story-item" onclick="document.getElementById('storyFile').click()"><div class="story-ring add"><div class="avatar">${ico('plus', 26)}</div></div><span class="story-name">أضف قصة</span></div>`;
+  if (!stories || stories.length === 0) return;
+  const uids = [...new Set(stories.map(s => s.user_id))];
+  const { data: profiles } = await supabaseClient.from('profiles').select('*').in('id', uids);
+  profiles.forEach(p => profileCache[p.id] = p);
+  Object.keys(storyGroups).forEach(k => delete storyGroups[k]);
+  stories.forEach(s => { (storyGroups[s.user_id] = storyGroups[s.user_id] || []).push(s); });
+  for (const uid in storyGroups) {
+    const p = profileCache[uid] || { full_name: 'مستخدم' };
+    container.insertAdjacentHTML('beforeend', `<div class="story-item" onclick="openStoryByUser('${uid}')"><div class="story-ring">${avatarHtml({ ...p, id: null })}</div><span class="story-name">${esc((p.full_name || '').split(' ')[0])}</span></div>`);
+  }
+}
+window.openStoryByUser = (uid) => openStoryViewer(storyGroups[uid], profileCache[uid] || { full_name: 'مستخدم' });
+
+$('storyFile').onchange = async (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  toast('جاري رفع القصة...');
+  const path = `stories/${me.id}/${Date.now()}.${file.name.split('.').pop()}`;
+  try {
+    const { error: upErr } = await supabaseClient.storage.from('post-images').upload(path, file);
+    if (upErr) throw upErr;
+    const { data: urlData } = supabaseClient.storage.from('post-images').getPublicUrl(path);
+    await supabaseClient.from('stories').insert({ user_id: me.id, media_url: urlData.publicUrl, media_type: file.type.startsWith('video') ? 'video' : 'image', expires_at: new Date(Date.now() + 86400000).toISOString() });
+    toast('تم النشر ✨'); loadStories();
+  } catch (err) { toast('فشل: ' + err.message); }
+  e.target.value = '';
+};
+
+function openStoryViewer(stories, profile) {
+  if (!stories || !stories.length) return;
+  let idx = 0, timer;
+  const viewer = document.createElement('div');
+  viewer.className = 'story-viewer';
+  document.body.appendChild(viewer);
+  const close = () => { clearTimeout(timer); viewer.remove(); };
+  const render = () => {
+    const s = stories[idx];
+    viewer.innerHTML = `
+      <div class="story-progress">${stories.map((_, i) => `<div class="p-bar"><div class="p-fill" id="fill-${i}" style="width:${i < idx ? '100%' : '0%'}"></div></div>`).join('')}</div>
+      <div class="story-header">${avatarHtml({ ...profile, id: null })}<strong>${esc(profile.full_name)}</strong><button style="margin-inline-start:auto;color:#fff;" id="stClose">${ico('x', 26)}</button></div>
+      <div class="story-content" id="stContent">${s.media_type === 'video' ? `<video src="${s.media_url}" autoplay playsinline controlsList="nodownload"></video>` : `<img src="${s.media_url}" alt="">`}</div>
+      <div class="story-footer"><input type="text" class="story-reply" placeholder="أرسل رداً..." onkeypress="if(event.key==='Enter'){toast('تم إرسال الرد'); this.value='';}"><button class="story-icon" onclick="toast('تم الإعجاب ❤️')">${ico('heart', 22)}</button></div>`;
+    $('stClose').onclick = close;
+    $('stContent').onclick = (e) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      // RTL: الجانب الأيسر = التالي، الأيمن = السابق
+      if (e.clientX < rect.left + rect.width / 2) next(); else prev();
+    };
+    const fill = document.getElementById(`fill-${idx}`); const dur = s.media_type === 'video' ? 15000 : 5000;
+    fill.style.transition = `width ${dur}ms linear`; setTimeout(() => fill.style.width = '100%', 50);
+    clearTimeout(timer); timer = setTimeout(next, dur);
+  };
+  const next = () => { clearTimeout(timer); if (idx < stories.length - 1) { idx++; render(); } else close(); };
+  const prev = () => { clearTimeout(timer); if (idx > 0) idx--; render(); };
+  render();
+}
+
+// ================= PROFILE EDITING =================
+async function uploadProfileImage(file, field, kind) {
+  if (!file) return;
+  toast('جاري رفع الصورة...');
+  const ext = file.name.split('.').pop();
+  const path = `${me.id}/profile-${kind}-${Date.now()}.${ext}`;
+  try {
+    const { error: upErr } = await supabaseClient.storage.from('post-images').upload(path, file);
+    if (upErr) throw upErr;
+    const { data } = supabaseClient.storage.from('post-images').getPublicUrl(path);
+    const { error: dbErr } = await supabaseClient.from('profiles').update({ [field]: data.publicUrl }).eq('id', me.id);
+    if (dbErr) throw dbErr;
+    me[field] = data.publicUrl; toast('تم تحديث الصورة ✨'); renderProfile(me.id); updateIdentity();
+  } catch (err) { toast('فشل الرفع: ' + err.message); }
+}
+
+function showEditProfileModal() {
+  $('modalRoot').innerHTML = `<div class="modal-overlay" onclick="document.getElementById('modalRoot').innerHTML=''"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span>تعديل الملف الشخصي</span><button class="modal-close" onclick="document.getElementById('modalRoot').innerHTML=''">${ico('x', 16)}</button></div><label class="form-label">الاسم</label><input type="text" id="editName" class="form-input" value="${esc(me.full_name)}"><label class="form-label">اسم المستخدم</label><input type="text" id="editUsername" class="form-input" value="${esc(me.username || '')}"><label class="form-label">نبذة</label><textarea id="editBio" class="form-input" rows="3">${esc(me.bio || '')}</textarea><label class="form-label">الصورة الشخصية</label>
+<div style="display:flex;align-items:center;gap:14px;margin-bottom:4px">
+<div class="avatar" style="width:60px;height:60px;font-size:22px">${me.avatar_url ? `<img src="${esc(me.avatar_url)}" alt="">` : esc((me.full_name||'و')[0])}</div>
+<label class="pill-btn" for="editAvatarInput" style="cursor:pointer">تغيير الصورة</label>
+<input type="file" id="editAvatarInput" accept="image/*" hidden onchange="uploadProfileImage(this.files[0], 'avatar_url', 'avatar')">
+</div>
+<button class="btn-save" onclick="saveProfileChanges()">حفظ</button></div></div>`;
+}
+window.saveProfileChanges = async () => {
+  const newName = $('editName').value.trim(), newUsername = $('editUsername').value.trim() || null, newBio = $('editBio').value.trim();
+  if (!newName) return toast('الاسم مطلوب');
+  const { error } = await supabaseClient.from('profiles').update({ full_name: newName, username: newUsername, bio: newBio }).eq('id', me.id);
+  if (error) return toast('خطأ: ' + error.message);
+  me.full_name = newName; me.username = newUsername; me.bio = newBio;
+  toast('تم الحفظ ✨'); $('modalRoot').innerHTML = ''; renderProfile(me.id); updateIdentity();
+};
+function openPrivacyModal() {
+  $('modalRoot').innerHTML = `<div class="modal-overlay" onclick="document.getElementById('modalRoot').innerHTML=''"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span>الخصوصية</span><button class="modal-close" onclick="document.getElementById('modalRoot').innerHTML=''">${ico('x', 16)}</button></div><div class="privacy-text"><p>نحن في WASL نحترم خصوصيتك ونلتزم بحماية بياناتك.</p><p>تُستخدم بياناتك لتشغيل حسابك، ولضمان أمان المنصة.</p></div><button class="btn-save" onclick="document.getElementById('modalRoot').innerHTML=''">إغلاق</button></div></div>`;
+}
+
+// ================= VOICE ROOMS (الغرف الصوتية) =================
+const ROOM_COVERS = [
+  'linear-gradient(135deg,#7c3aed,#ec4899)',
+  'linear-gradient(135deg,#0ea5e9,#6366f1)',
+  'linear-gradient(135deg,#f59e0b,#ef4444)',
+  'linear-gradient(135deg,#10b981,#0ea5e9)',
+  'linear-gradient(135deg,#be185d,#7c3aed)',
+  'linear-gradient(135deg,#312e81,#0f172a)'
+];
+const ROOM_SEATS = 8;
+const RTC_CONFIG = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+Object.assign(ICONS, { crown: '<path d="M2 8l5 4 5-7 5 7 5-4-2.5 11h-15z"/>' });
+
+let roomFilter = 'all', roomsCache = [], crCover = 0, rv = null;
+const roomWatchers = new Map(), roomPresence = new Map();
+
+const coverOf = r => ROOM_COVERS[(r.cover_idx || 0) % ROOM_COVERS.length];
+const avatarInner = m => m.avatar ? `<img src="${esc(m.avatar)}" alt="">` : esc((m.name || 'و').trim().charAt(0) || 'و');
+const collectMembers = state => Object.values(state).map(metas => metas[0]).filter(m => m && m.uid)
+  .sort((a, b) => (Number(b.owner) - Number(a.owner)) || String(a.name).localeCompare(String(b.name), 'ar'));
+const stackHtml = mem => mem.slice(0, 4).map(m => `<span class="rc-mini">${avatarInner(m)}</span>`).join('');
+const myMeta = () => ({
+  uid: me.id, name: me.full_name || 'مستخدم', avatar: me.avatar_url || null, frame: me.frame || null,
+  owner: rv.room.owner_id === me.id, muted: rv.muted, speaking: rv.speaking && !rv.muted
+});
+
+// ---------- Lobby ----------
+async function renderRoomsPage() {
+  stopRoomWatchers();
+  currentPage = 'rooms';
+  setActiveNav('rooms');
+  $('homePage').classList.add('hidden');
+  const host = $('otherPage');
+  host.classList.remove('hidden');
+  host.className = 'fade-in';
+  host.innerHTML = `
+    <div class="rooms-hero">
+      <div class="rh-glow"></div>
+      <div class="rh-text">
+        <span class="rh-kicker">${ico('mic', 14)} صوت مباشر</span>
+        <h2>الغرف الصوتية</h2>
+        <p>تحدّث بصوتك مع أصدقائك، وادخل غرفاً مميزة بتصميم خاص.</p>
+      </div>
+      <button class="btn-primary rh-create" onclick="openCreateRoom()">${ico('plus', 18)} إنشاء غرفة</button>
+    </div>
+    <div class="friends-tabs">
+      <div class="friends-tab ${roomFilter === 'all' ? 'active' : ''}" onclick="setRoomFilter('all', this)">كل الغرف</div>
+      <div class="friends-tab ${roomFilter === 'premium' ? 'active' : ''}" onclick="setRoomFilter('premium', this)">${ico('crown', 14)} المميزة</div>
+    </div>
+    <div class="rooms-grid" id="roomsGrid">${loaderHtml}</div>`;
+  await loadRooms();
+}
+
+window.setRoomFilter = (f, el) => {
+  roomFilter = f;
+  el.parentElement.querySelectorAll('.friends-tab').forEach(t => t.classList.toggle('active', t === el));
+  drawRooms();
+};
+
+async function loadRooms() {
+  const { data, error } = await supabaseClient.from('voice_rooms').select('*').order('created_at', { ascending: false }).limit(60);
+  if (!$('roomsGrid')) return;
+  if (error) { $('roomsGrid').innerHTML = emptyHtml('mic', 'تعذر تحميل الغرف: ' + esc(error.message)); return; }
+  roomsCache = data || [];
+  const oids = [...new Set(roomsCache.map(r => r.owner_id))];
+  if (oids.length) {
+    const { data: ps } = await supabaseClient.from('profiles').select('*').in('id', oids);
+    ps?.forEach(p => profileCache[p.id] = p);
+  }
+  drawRooms();
+  watchRooms();
+}
+
+function drawRooms() {
+  const grid = $('roomsGrid'); if (!grid) return;
+  const list = roomsCache
+    .filter(r => roomFilter !== 'premium' || r.is_premium)
+    .sort((a, b) => Number(b.is_premium) - Number(a.is_premium));
+  if (!list.length) {
+    grid.innerHTML = emptyHtml('mic', roomFilter === 'premium' ? 'لا توجد غرف مميزة الآن.' : 'لا توجد غرف بعد — افتح أول غرفة!');
+    return;
+  }
+  grid.innerHTML = list.map(roomCardHtml).join('');
+}
+
+function roomCardHtml(r) {
+  const o = profileCache[r.owner_id] || { full_name: 'مستخدم' };
+  const mem = roomPresence.get(r.id) || [];
+  return `
+  <article class="room-card${r.is_premium ? ' premium' : ''}" style="--cover:${coverOf(r)}" onclick="joinRoom('${r.id}')">
+    <div class="rc-cover">
+      ${r.is_premium ? `<span class="rc-premium">${ico('crown', 13)} مميزة</span>` : '<span></span>'}
+      <span class="rc-count">${ico('users', 14)} <b id="cnt-${r.id}">${mem.length}</b></span>
+    </div>
+    <div class="rc-body">
+      <h3>${esc(r.title)}${r.is_verified ? ' <span class="verified-badge"></span>' : ''}</h3>
+      ${r.description ? `<p>${esc(r.description)}</p>` : ''}
+      <div class="rc-foot">
+        <div class="rc-host">${avatarHtml({ ...o, id: null })}<span>${esc(o.full_name)}</span></div>
+        <div class="rc-stack" id="stack-${r.id}">${stackHtml(mem)}</div>
+      </div>
+    </div>
+  </article>`;
+}
+
+// مراقبة عدد المستمعين في الغرف دون الانضمام إليها (presence للقراءة فقط)
+function watchRooms() {
+  roomsCache.forEach(r => {
+    if (roomWatchers.has(r.id)) return;
+    const ch = supabaseClient.channel('voice-room-' + r.id, { config: { presence: { key: me.id } } });
+    ch.on('presence', { event: 'sync' }, () => {
+      roomPresence.set(r.id, collectMembers(ch.presenceState()));
+      refreshRoomCard(r.id);
+    }).subscribe();
+    roomWatchers.set(r.id, ch);
+  });
+}
+function refreshRoomCard(id) {
+  const mem = roomPresence.get(id) || [];
+  const c = $('cnt-' + id); if (c) c.textContent = mem.length;
+  const s = $('stack-' + id); if (s) s.innerHTML = stackHtml(mem);
+}
+function stopRoomWatchers() {
+  roomWatchers.forEach(ch => supabaseClient.removeChannel(ch));
+  roomWatchers.clear();
+  roomPresence.clear();
+}
+
+// ---------- Create ----------
+window.openCreateRoom = () => {
+  crCover = 0;
+  const verified = !!me.is_verified;
+  $('modalRoot').innerHTML = `
+  <div class="modal-overlay" onclick="closeModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header"><span>إنشاء غرفة صوتية</span><button class="modal-close" onclick="closeModal()">${ico('x', 16)}</button></div>
+      <label class="form-label">عنوان الغرفة</label>
+      <input id="crTitle" class="form-input" maxlength="60" placeholder="مثال: سهرة الأصدقاء ✨">
+      <label class="form-label">وصف قصير (اختياري)</label>
+      <textarea id="crDesc" class="form-input" rows="2" maxlength="200"></textarea>
+      <label class="form-label">لون الغلاف</label>
+      <div class="cover-pick">${ROOM_COVERS.map((c, i) => `<button type="button" class="cp${i === 0 ? ' sel' : ''}" style="background:${c}" onclick="pickCover(${i}, this)"></button>`).join('')}</div>
+      <label class="premium-toggle${verified ? '' : ' locked'}">
+        <input type="checkbox" id="crPremium"${verified ? '' : ' disabled'}>
+        <span class="pt-text"><b>${ico('crown', 15)} غرفة مميزة</b>
+        <small>${verified ? 'تظهر في قسم المميزة بإطار ذهبي وأولوية في العرض.' : 'متاحة للحسابات الموثّقة فقط.'}</small></span>
+      </label>
+      <button class="btn-save" id="crSave" onclick="createRoom()">ابدأ الغرفة</button>
+    </div>
+  </div>`;
+};
+window.pickCover = (i, el) => {
+  crCover = i;
+  el.parentElement.querySelectorAll('.cp').forEach(x => x.classList.toggle('sel', x === el));
+};
+window.closeModal = () => { $('modalRoot').innerHTML = ''; };
+
+window.createRoom = async () => {
+  const title = ($('crTitle').value || '').trim();
+  const desc = ($('crDesc').value || '').trim();
+  if (!title) return toast('اكتب عنواناً للغرفة');
+  if (!moderateText(title).ok || !moderateText(desc).ok) return toast('المحتوى يحتوي على كلمات ممنوعة.');
+  const premium = !!$('crPremium').checked && !!me.is_verified;
+  const btn = $('crSave'); btn.disabled = true;
+  const { data, error } = await supabaseClient.from('voice_rooms')
+    .insert({ owner_id: me.id, title, description: desc || null, is_premium: premium, cover_idx: crCover })
+    .select().single();
+  btn.disabled = false;
+  if (error) return toast('تعذر إنشاء الغرفة: ' + error.message);
+  closeModal();
+  toast('تم إنشاء الغرفة ✨');
+  await joinRoom(data.id);
+};
+
+// ---------- Join / Leave ----------
+window.joinRoom = async (roomId) => {
+  if (rv) return;
+  let room = roomsCache.find(r => r.id === roomId);
+  if (!room) {
+    const { data } = await supabaseClient.from('voice_rooms').select('*').eq('id', roomId).maybeSingle();
+    room = data;
+  }
+  if (!room) return toast('الغرفة غير موجودة أو أُغلقت');
+  if (!profileCache[room.owner_id]) {
+    const { data } = await supabaseClient.from('profiles').select('*').eq('id', room.owner_id).maybeSingle();
+    if (data) profileCache[data.id] = data;
+  }
+
+  const { data: myMod } = await supabaseClient.from('room_moderation').select('action').eq('room_id', room.id).eq('target_id', me.id);
+  if (myMod?.some(r => r.action === 'ban')) return toast('أنت محظور من هذه الغرفة 🚫');
+  const forced = !myProtected && !!myMod?.some(r => r.action === 'mute');
+
+  stopRoomWatchers();          // نوقف مراقبة القائمة قبل الانضمام لنفس القناة
+  await sleep(250);
+
+  rv = { room, ch: null, pcs: new Map(), audios: new Map(), pending: new Map(), stream: null,
+         muted: forced, forcedMute: forced, speaking: false, members: [], vad: null, actx: null, lastTrack: 0, subscribed: false };
+  renderRoomView();
+
+  let stream = null;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+  } catch (e) { toast('لم يُسمح بالميكروفون — ستدخل كمستمع'); }
+  if (!rv || rv.room.id !== room.id) { stream?.getTracks().forEach(t => t.stop()); return; }
+
+  rv.stream = stream;
+  if (stream && forced) stream.getAudioTracks().forEach(t => (t.enabled = false));
+  if (stream) startVAD();
+  connectRoomChannel();
+};
+
+function connectRoomChannel() {
+  const st = rv;
+  const ch = supabaseClient.channel('voice-room-' + st.room.id, { config: { presence: { key: me.id } } });
+  st.ch = ch;
+  ch.on('presence', { event: 'sync' }, () => { if (rv === st) onRoomPresence(ch.presenceState()); })
+    .on('broadcast', { event: 'sig' }, ({ payload }) => { if (rv === st) onSignal(payload); })
+    .on('broadcast', { event: 'closed' }, () => { if (rv === st) { toast('أغلق المالك الغرفة'); leaveRoom(); } })
+    .on('broadcast', { event: 'mod' }, ({ payload }) => { if (rv === st) onModEvent(payload); })
+    .subscribe(status => { if (status === 'SUBSCRIBED' && rv === st) { st.subscribed = true; trackMe(); } });
+}
+
+function trackMe() {
+  if (!rv?.ch || !rv.subscribed) return;
+  rv.lastTrack = Date.now();
+  rv.ch.track(myMeta()).catch(() => {});
+}
+
+window.leaveRoom = async () => {
+  if (!rv) return;
+  const st = rv; rv = null;
+  clearInterval(st.vad);
+  st.pcs.forEach(pc => { pc.onconnectionstatechange = null; pc.close(); });
+  st.audios.forEach(a => { a.srcObject = null; a.remove(); });
+  st.stream?.getTracks().forEach(t => t.stop());
+  st.actx?.close().catch(() => {});
+  $('roomView')?.remove();
+  closeRoomSheet();
+  if (st.ch) await supabaseClient.removeChannel(st.ch);
+  renderRoomsPage();
+};
+
+window.closeRoomAsOwner = async () => {
+  if (!rv || rv.room.owner_id !== me.id) return;
+  if (!confirm('إغلاق الغرفة للجميع؟')) return;
+  const id = rv.room.id;
+  rv.ch?.send({ type: 'broadcast', event: 'closed', payload: {} });
+  await sleep(300);
+  const { error } = await supabaseClient.from('voice_rooms').delete().eq('id', id);
+  if (error) toast('تعذر الإغلاق: ' + error.message);
+  leaveRoom();
+};
+
+// ---------- Presence & mesh WebRTC ----------
+// كل زوج يتصل مرة واحدة: صاحب المعرّف الأصغر هو الذي يبدأ العرض (offer)
+async function refreshMemberProfiles(uids) {
+  const need = [...new Set(uids.filter(Boolean))];
+  if (!need.length) return;
+  const { data } = await supabaseClient.from('profiles').select('id, frame, is_verified, avatar_url, full_name').in('id', need);
+  (data || []).forEach(p => { profileCache[p.id] = { ...(profileCache[p.id] || {}), ...p }; });
+  if (rv) renderRoomView();
+}
+function onRoomPresence(state) {
+  if (!rv) return;
+  rv.members = collectMembers(state);
+  refreshMemberProfiles(rv.members.map(m => m.uid));
+  const ids = new Set(rv.members.map(m => m.uid));
+  rv.pcs.forEach((_, id) => { if (!ids.has(id)) closePeer(id); });
+  ids.forEach(id => {
+    if (id !== me.id && !rv.pcs.has(id) && me.id < id) makeOffer(id);
+  });
+  renderRoomView();
+}
+
+async function makePeer(id, init) {
+  const pc = new RTCPeerConnection(RTC_CONFIG);
+  rv.pcs.set(id, pc);
+  if (rv.stream) rv.stream.getTracks().forEach(t => pc.addTrack(t, rv.stream));
+  else if (init) pc.addTransceiver('audio', { direction: 'recvonly' });
+  pc.onicecandidate = e => { if (e.candidate) sendSig(id, { candidate: e.candidate }); };
+  pc.ontrack = e => attachRemote(id, e.streams[0] || new MediaStream([e.track]));
+  pc.onconnectionstatechange = () => {
+    if (pc.connectionState === 'failed') {
+      closePeer(id);
+      setTimeout(() => { if (rv?.ch) onRoomPresence(rv.ch.presenceState()); }, 2500);
+    }
+  };
+  return pc;
+}
+
+async function makeOffer(id) {
+  try {
+    const pc = await makePeer(id, true);
+    await pc.setLocalDescription(await pc.createOffer());
+    sendSig(id, { sdp: { type: pc.localDescription.type, sdp: pc.localDescription.sdp } });
+  } catch (e) { console.warn('offer', e); closePeer(id); }
+}
+
+function sendSig(to, body) {
+  if (!rv?.ch) return;
+  rv.ch.send({ type: 'broadcast', event: 'sig', payload: { to, from: me.id, ...body } });
+}
+
+async function onSignal(p) {
+  if (!rv || p.to !== me.id) return;
+  const id = p.from;
+  try {
+    if (p.sdp?.type === 'offer') {
+      closePeer(id);
+      const pc = await makePeer(id, false);
+      await pc.setRemoteDescription(p.sdp);
+      await flushIce(id);
+      await pc.setLocalDescription(await pc.createAnswer());
+      sendSig(id, { sdp: { type: pc.localDescription.type, sdp: pc.localDescription.sdp } });
+    } else if (p.sdp?.type === 'answer') {
+      const pc = rv.pcs.get(id);
+      if (pc) { await pc.setRemoteDescription(p.sdp); await flushIce(id); }
+    } else if (p.candidate) {
+      const pc = rv.pcs.get(id);
+      if (pc?.remoteDescription) await pc.addIceCandidate(p.candidate).catch(() => {});
+      else {
+        if (!rv.pending.has(id)) rv.pending.set(id, []);
+        rv.pending.get(id).push(p.candidate);
+      }
+    }
+  } catch (e) { console.warn('signal', e); }
+}
+
+async function flushIce(id) {
+  const pc = rv?.pcs.get(id);
+  const list = rv?.pending.get(id) || [];
+  rv?.pending.delete(id);
+  if (pc) for (const c of list) await pc.addIceCandidate(c).catch(() => {});
+}
+
+function attachRemote(id, stream) {
+  if (!rv) return;
+  let a = rv.audios.get(id);
+  if (!a) {
+    a = document.createElement('audio');
+    a.autoplay = true; a.playsInline = true; a.style.display = 'none';
+    document.body.appendChild(a);
+    rv.audios.set(id, a);
+  }
+  a.srcObject = stream;
+  a.play().catch(() => {});
+}
+
+function closePeer(id) {
+  if (!rv) return;
+  const pc = rv.pcs.get(id);
+  if (pc) { pc.onconnectionstatechange = null; pc.close(); }
+  rv.pcs.delete(id);
+  rv.pending.delete(id);
+  const a = rv.audios.get(id);
+  if (a) { a.srcObject = null; a.remove(); }
+  rv.audios.delete(id);
+}
+
+// ---------- Speaking detection & mic ----------
+function startVAD() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    rv.actx = new Ctx();
+    rv.actx.resume?.();
+    const an = rv.actx.createAnalyser();
+    an.fftSize = 512;
+    rv.actx.createMediaStreamSource(rv.stream).connect(an);
+    const buf = new Uint8Array(an.fftSize);
+    rv.vad = setInterval(() => {
+      if (!rv) return;
+      an.getByteTimeDomainData(buf);
+      let s = 0;
+      for (let i = 0; i < buf.length; i++) { const x = (buf[i] - 128) / 128; s += x * x; }
+      const talking = !rv.muted && Math.sqrt(s / buf.length) > 0.035;
+      if (talking !== rv.speaking && Date.now() - rv.lastTrack > 350) {
+        rv.speaking = talking;
+        trackMe();
+        renderRoomView();
+      }
+    }, 120);
+  } catch (e) { console.warn('VAD', e); }
+}
+
+window.toggleRoomMic = () => {
+  if (!rv?.stream) return;
+  if (rv.forcedMute) return toast('تم كتمك من صاحب الغرفة 🔇');
+  rv.muted = !rv.muted;
+  rv.stream.getAudioTracks().forEach(t => (t.enabled = !rv.muted));
+  if (rv.muted) rv.speaking = false;
+  trackMe();
+  renderRoomView();
+};
+
+// ---------- Room view ----------
+function renderRoomView() {
+  if (!rv) return;
+  let el = $('roomView');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'roomView';
+    el.className = 'room-view';
+    el.innerHTML = `
+      <div class="rv-bg" id="rvBg"></div>
+      <header class="rv-head">
+        <button class="rv-btn" onclick="leaveRoom()" title="خروج">${ico('back', 20)}</button>
+        <div class="rv-title"><h3 id="rvTitle"></h3><span id="rvSub"></span></div>
+        <button class="rv-btn hidden" id="rvBansBtn" onclick="openBanList()" title="المحظورون">${ico('shield', 18)}</button>
+        <button class="rv-btn danger hidden" id="rvCloseBtn" onclick="closeRoomAsOwner()" title="إغلاق الغرفة">${ico('x', 18)}</button>
+      </header>
+      <div class="rv-seats" id="rvSeats"></div>
+      <div class="rv-listeners" id="rvListeners"></div>
+      <div class="rv-bar">
+        <div class="rv-micwrap">
+          <button class="rv-mic" id="rvMic" onclick="toggleRoomMic()"></button>
+          <span id="rvMicLabel"></span>
+        </div>
+        <button class="rv-leave" onclick="leaveRoom()">مغادرة</button>
+      </div>`;
+    document.body.appendChild(el);
+  }
+  const r = rv.room;
+  $('rvBg').style.background = coverOf(r);
+  $('rvTitle').innerHTML = esc(r.title) + (r.is_verified ? ' <span class="verified-badge"></span>' : '');
+  $('rvSub').innerHTML = `${ico('users', 14)} ${rv.members.length} في الغرفة${r.is_premium ? ' · <b class="gold">مميزة</b>' : ''}`;
+  $('rvCloseBtn').classList.toggle('hidden', r.owner_id !== me.id);
+  $('rvBansBtn').classList.toggle('hidden', r.owner_id !== me.id);
+
+  $('rvSeats').innerHTML = Array.from({ length: ROOM_SEATS }, (_, i) => {
+    const m = rv.members[i];
+    if (!m) return `<div class="seat empty"><div class="seat-ring"><div class="seat-av">+</div></div><span class="seat-name">فارغ</span></div>`;
+    return `
+    <div class="seat${m.speaking && !m.muted ? ' talking' : ''}${m.owner ? ' host' : ''}" ${rv.room.owner_id === me.id && m.uid !== me.id ? `onclick="openModerate('${m.uid}')"` : ''}>
+      <div class="seat-ring">
+        <div class="seat-av">${avatarInner(m)}</div>
+        ${(m.frame || profileCache[m.uid]?.frame) === 'shield' ? `<img class="av-ring" src="${SHIELD_IMG}" alt="">` : ''}
+        ${m.owner ? `<span class="seat-crown">${ico('crown', 12)}</span>` : ''}
+        ${m.muted ? `<span class="seat-mute">${ico('mutemic', 12)}</span>` : ''}
+      </div>
+      <span class="seat-name">${esc(m.name)}${m.uid === me.id ? ' (أنت)' : ''}</span>
+    </div>`;
+  }).join('');
+
+  const extra = rv.members.slice(ROOM_SEATS);
+  $('rvListeners').innerHTML = extra.length
+    ? `<div class="rv-chip-label">المستمعون · ${extra.length}</div>` +
+      extra.map(m => `<div class="lis-chip" ${rv.room.owner_id === me.id && m.uid !== me.id ? `onclick="openModerate('${m.uid}')"` : ''}><span class="mini">${avatarInner(m)}</span>${esc(m.name)}</div>`).join('')
+    : '';
+  renderMicBtn();
+}
+
+function renderMicBtn() {
+  const b = $('rvMic'); if (!b || !rv) return;
+  const noMic = !rv.stream;
+  const off = noMic || rv.muted;
+  b.classList.toggle('off', off);
+  b.disabled = noMic;
+  b.innerHTML = ico(off ? 'mutemic' : 'mic', 30);
+  $('rvMicLabel').textContent = noMic ? 'مستمع فقط' : rv.muted ? 'مكتوم · اضغط للتحدث' : 'تتحدث الآن · اضغط للكتم';
+}
+
+// ---------- الإشراف: طرد / حظر / كتم ----------
+const PROTECTED_MSGS = {
+  ban: 'لا يمكنك حظر صاحب التطبيق',
+  mute: 'لا يمكنك كتم صاحب التطبيق',
+  kick: 'لا يمكنك طرد صاحب التطبيق'
+};
+
+function showRoomSheet(inner) {
+  closeRoomSheet();
+  const d = document.createElement('div');
+  d.id = 'modSheet';
+  d.className = 'mod-overlay';
+  d.onclick = closeRoomSheet;
+  d.innerHTML = `<div class="mod-card" onclick="event.stopPropagation()">${inner}</div>`;
+  document.body.appendChild(d);
+}
+window.closeRoomSheet = () => { $('modSheet')?.remove(); };
+
+function showProtectedNotice(action = 'kick') {
+  closeRoomSheet();
+  const d = document.createElement('div');
+  d.id = 'modSheet';
+  d.className = 'prot-overlay';
+  d.onclick = closeRoomSheet;
+  d.innerHTML = `
+    <div class="prot-card" onclick="event.stopPropagation()">
+      <div class="prot-ico">${ico('shield', 28)}</div>
+      <p class="prot-msg">${PROTECTED_MSGS[action] || PROTECTED_MSGS.kick}</p>
+      <button class="prot-btn" onclick="closeRoomSheet()">حسناً</button>
+    </div>`;
+  document.body.appendChild(d);
+}
+
+function sendMod(to, type) {
+  if (!rv?.ch) return;
+  rv.ch.send({ type: 'broadcast', event: 'mod', payload: { to, from: me.id, type } });
+}
+
+// يستقبل المستخدم المستهدف الأمر من المالك فقط
+function onModEvent(p) {
+  if (!rv || p.to !== me.id || p.from !== rv.room.owner_id) return;
+  if (myProtected && (p.type === 'kick' || p.type === 'mute')) return;
+  if (p.type === 'kick') { toast('تم طردك من الغرفة'); leaveRoom(); return; }
+  if (p.type === 'mute') { rv.forcedMute = true; applyMute(true); toast('كتمك صاحب الغرفة 🔇'); }
+  if (p.type === 'unmute') { rv.forcedMute = false; applyMute(false); toast('تم رفع الكتم عنك'); }
+}
+
+function applyMute(on) {
+  if (!rv) return;
+  rv.muted = on;
+  if (on) rv.speaking = false;
+  rv.stream?.getAudioTracks().forEach(t => (t.enabled = !on));
+  trackMe();
+  renderRoomView();
+}
+
+window.openModerate = async (uid) => {
+  if (!rv || rv.room.owner_id !== me.id || uid === me.id) return;
+  const m = rv.members.find(x => x.uid === uid);
+  if (!m) return;
+  const { data: isProtected, error } = await supabaseClient.rpc('is_protected_user', { p_uid: uid });
+  if (error) return toast('تعذر التحقق: ' + error.message);
+  const { data: rows } = await supabaseClient.from('room_moderation')
+    .select('action').eq('room_id', rv.room.id).eq('target_id', uid);
+  const muted = !!rows?.some(r => r.action === 'mute');
+  showRoomSheet(`
+    <div class="mod-head">
+      <div class="avatar">${avatarInner(m)}</div>
+      <div><b>${esc(m.name)}</b><span>إجراءات المشرف</span></div>
+    </div>
+    <button class="mod-act warn" onclick="modAct('${muted ? 'unmute' : 'mute'}','${uid}')">${ico(muted ? 'mic' : 'mutemic', 20)} ${muted ? 'إلغاء الكتم' : 'كتم الميكروفون'}</button>
+    <button class="mod-act" onclick="modAct('kick','${uid}')">${ico('x', 20)} طرد من الغرفة</button>
+    <button class="mod-act danger" onclick="modAct('ban','${uid}')">${ico('shield', 20)} حظر من الغرفة</button>`);
+};
+
+window.modAct = async (action, uid) => {
+  if (!rv || rv.room.owner_id !== me.id) return;
+  const roomId = rv.room.id;
+  const name = rv.members.find(x => x.uid === uid)?.name || 'المستخدم';
+  try {
+    if (action === 'kick' || action === 'ban' || action === 'mute') {
+      const { data: isProtected, error: pErr } = await supabaseClient.rpc('is_protected_user', { p_uid: uid });
+      if (pErr) throw pErr;
+      if (isProtected) return showProtectedNotice(action);
+    }
+    if (action === 'kick') {
+      sendMod(uid, 'kick');
+      toast(`تم طرد ${name}`);
+    } else if (action === 'ban' || action === 'mute') {
+      const { error } = await supabaseClient.from('room_moderation').upsert(
+        { room_id: roomId, target_id: uid, action, created_by: me.id },
+        { onConflict: 'room_id,target_id,action', ignoreDuplicates: true });
+      if (error) throw error;
+      sendMod(uid, action === 'ban' ? 'kick' : 'mute');
+      toast(action === 'ban' ? `تم حظر ${name}` : `تم كتم ${name}`);
+    } else if (action === 'unmute') {
+      const { error } = await supabaseClient.from('room_moderation').delete()
+        .eq('room_id', roomId).eq('target_id', uid).eq('action', 'mute');
+      if (error) throw error;
+      sendMod(uid, 'unmute');
+      toast('تم إلغاء الكتم');
+    } else if (action === 'unban') {
+      const { error } = await supabaseClient.from('room_moderation').delete()
+        .eq('room_id', roomId).eq('target_id', uid).eq('action', 'ban');
+      if (error) throw error;
+      toast('تم رفع الحظر');
+    }
+  } catch (e) {
+    if (String(e.message || '').includes('PROTECTED_USER')) return showProtectedNotice(action);
+    return toast('تعذر تنفيذ الإجراء: ' + e.message);
+  }
+  if (action === 'unban') return openBanList();
+  closeRoomSheet();
+};
+
+window.openBanList = async () => {
+  if (!rv || rv.room.owner_id !== me.id) return;
+  const { data: rows, error } = await supabaseClient.from('room_moderation')
+    .select('target_id').eq('room_id', rv.room.id).eq('action', 'ban');
+  if (error) return toast('تعذر تحميل القائمة: ' + error.message);
+  const ids = (rows || []).map(r => r.target_id);
+  let profs = [];
+  if (ids.length) {
+    const { data } = await supabaseClient.from('profiles').select('*').in('id', ids);
+    profs = data || [];
+    profs.forEach(p => profileCache[p.id] = p);
+  }
+  showRoomSheet(`
+    <div class="mod-head"><div><b>المحظورون</b><span>${ids.length} مستخدم</span></div></div>
+    ${ids.length
+      ? profs.map(p => `
+        <div class="mod-row">
+          ${avatarHtml({ ...p, id: null })}
+          <span>${esc(p.full_name)}</span>
+          <button class="btn-decline" onclick="modAct('unban','${p.id}')">رفع الحظر</button>
+        </div>`).join('')
+      : '<div class="muted" style="text-align:center;padding:14px">لا يوجد محظورون.</div>'}`);
+};
+
+// ================= ADMIN (التوثيق والدروع) =================
+let isAdminMe = false, adminQuery = '', adminSearchTimer = null;
+
+let myProtected = false;
+async function checkProtectedMe() {
+  try { const { data } = await supabaseClient.rpc('is_protected_user', { p_uid: me.id }); myProtected = !!data; } catch (e) { myProtected = false; }
+}
+async function checkAdmin() {
+  checkProtectedMe();
+  try {
+    const { data } = await supabaseClient.rpc('is_app_admin', { p_uid: me.id });
+    isAdminMe = !!data;
+  } catch (e) { isAdminMe = false; }
+  $('adminNav')?.classList.toggle('hidden', !isAdminMe);
+}
+
+window.renderAdmin = async (tab = 'users') => {
+  if (!isAdminMe) return toast('هذه الصفحة للمشرف فقط');
+  stopRoomWatchers();
+  currentPage = 'admin';
+  setActiveNav('admin');
+  $('homePage').classList.add('hidden');
+  const host = $('otherPage');
+  host.classList.remove('hidden');
+  host.className = 'fade-in';
+  host.innerHTML = `
+    <div class="rooms-hero">
+      <div class="rh-glow"></div>
+      <div class="rh-text">
+        <span class="rh-kicker">${ico('shield', 14)} لوحة المشرف</span>
+        <h2>التوثيق والدروع</h2>
+        <p>وثّق الحسابات والغرف، وامنح درع صاحب التطبيق لمن تريد.</p>
+      </div>
+    </div>
+    <div class="friends-tabs">
+      <div class="friends-tab ${tab === 'users' ? 'active' : ''}" onclick="renderAdmin('users')">الحسابات</div>
+      <div class="friends-tab ${tab === 'rooms' ? 'active' : ''}" onclick="renderAdmin('rooms')">الغرف</div>
+    </div>
+    ${tab === 'users' ? `<div class="admin-search"><input id="adminQ" placeholder="ابحث بالاسم أو اسم المستخدم..." value="${esc(adminQuery)}" oninput="adminSearch(this.value)"></div>` : ''}
+    <div id="adminList">${loaderHtml}</div>`;
+  if (tab === 'rooms') await loadAdminRooms();
+  else await loadAdminUsers(adminQuery);
+};
+
+window.adminSearch = (v) => {
+  adminQuery = (v || '').trim();
+  clearTimeout(adminSearchTimer);
+  adminSearchTimer = setTimeout(() => loadAdminUsers(adminQuery), 300);
+};
+
+async function loadAdminUsers(q = '') {
+  const list = $('adminList'); if (!list) return;
+  let query = supabaseClient.from('profiles')
+    .select('id, full_name, username, avatar_url, is_verified, frame, is_protected, created_at')
+    .order('created_at', { ascending: false }).limit(100);
+  if (q) query = query.or(`full_name.ilike.%${q}%,username.ilike.%${q}%`);
+  const { data, error } = await query;
+  if (!$('adminList')) return;
+  if (error) return list.innerHTML = emptyHtml('shield', 'تعذر التحميل: ' + esc(error.message));
+  if (!data?.length) return list.innerHTML = emptyHtml('users', 'لا توجد نتائج.');
+  list.innerHTML = data.map(p => {
+    const shield = p.frame === 'shield';
+    return `
+    <div class="friend-card admin-row">
+      ${avatarHtml({ ...p, id: null })}
+      <div class="friend-info">
+        <strong>${esc(p.full_name)} ${p.is_verified ? '<span class="verified-badge"></span>' : ''}</strong>
+        <span class="muted small">@${esc(p.username || '-')}</span>
+      </div>
+      <div class="friend-actions admin-acts">
+        <button class="btn-add ${p.is_verified ? 'on' : ''}" onclick="adminProfile('${p.id}','is_verified',${!p.is_verified})">${p.is_verified ? 'موثّق ✓' : 'توثيق'}</button>
+        <button class="btn-add ${shield ? 'on' : ''}" onclick="adminProfile('${p.id}','frame',${shield ? 'null' : "'shield'"})">${shield ? 'إزالة الدرع' : 'منح الدرع'}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadAdminRooms() {
+  const list = $('adminList'); if (!list) return;
+  const { data, error } = await supabaseClient.from('voice_rooms')
+    .select('id, title, is_premium, is_verified, cover_idx, created_at')
+    .order('created_at', { ascending: false }).limit(100);
+  if (!$('adminList')) return;
+  if (error) return list.innerHTML = emptyHtml('shield', 'تعذر التحميل: ' + esc(error.message));
+  if (!data?.length) return list.innerHTML = emptyHtml('mic', 'لا توجد غرف.');
+  list.innerHTML = data.map(r => `
+    <div class="friend-card admin-row">
+      <div class="room-mini-cover" style="background:${coverOf(r)}"></div>
+      <div class="friend-info">
+        <strong>${esc(r.title)} ${r.is_verified ? '<span class="verified-badge"></span>' : ''}</strong>
+        <span class="muted small">${r.is_premium ? 'غرفة مميزة' : 'غرفة عامة'}</span>
+      </div>
+      <div class="friend-actions admin-acts">
+        <button class="btn-add ${r.is_verified ? 'on' : ''}" onclick="adminRoom('${r.id}',${!r.is_verified})">${r.is_verified ? 'موثّقة ✓' : 'توثيق الغرفة'}</button>
+      </div>
+    </div>`).join('');
+}
+
+window.adminProfile = async (id, field, value) => {
+  const { error } = await supabaseClient.from('profiles').update({ [field]: value }).eq('id', id);
+  if (error) return toast('تعذر الحفظ: ' + error.message);
+  toast('تم الحفظ ✨');
+  loadAdminUsers(adminQuery);
+};
+
+window.adminRoom = async (id, value) => {
+  const { error } = await supabaseClient.from('voice_rooms').update({ is_verified: value }).eq('id', id);
+  if (error) return toast('تعذر الحفظ: ' + error.message);
+  toast('تم الحفظ ✨');
+  loadAdminRooms();
+};
+
+// ================= PUSH NOTIFICATIONS (إشعارات الخلفية) =================
+const VAPID_PUBLIC_KEY = 'BC-1_OrvWp16q7LRo6tdlFJKPT1jF_BOqgabzo77pC7YLUuNn6D1lcP10Mvt3Ln5Hhfxi7BeLU59808AeOthSSc';
+const PUSH_SUPPORTED = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+let swReg = null;
+
+function urlB64ToUint8Array(b64) {
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+const withTimeout = (p, ms = 4000) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+async function getReg() { return swReg || await withTimeout(navigator.serviceWorker.ready); }
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(r => { swReg = r; }).catch(e => console.warn('SW:', e));
+  navigator.serviceWorker.addEventListener('message', e => {
+    const m = e.data || {};
+    if (m.type === 'push-nav') handlePushNav(m.data);
+    if (m.type === 'push-received') {
+      const d = m.data || {};
+      if (d.type === 'message' && d.from === currentChatUser) return; // المحادثة مفتوحة أمامك
+      toast(`${m.title}: ${m.body}`);
+      if (d.type !== 'message' || !currentChatUser) $('notifDot')?.classList.remove('hidden');
+    }
+  });
+}
+
+function handlePushNav(d) {
+  if (!d || !me) return;
+  if (d.type === 'message' && d.from) return goToChat(d.from);
+  if (d.type === 'friend_request' || d.type === 'friend_accept') return document.querySelector('.mobile-nav [data-page=friends], .sidebar [data-page=friends]')?.click();
+  if (d.type === 'like' || d.type === 'comment') return openNotifications();
+}
+function handleLaunchParams() {
+  const q = new URLSearchParams(location.search);
+  const n = q.get('n'); if (!n) return;
+  handlePushNav({ type: n, from: q.get('from') });
+  history.replaceState(null, '', location.pathname);
+}
+
+async function syncSubscription(sub) {
+  const j = sub.toJSON();
+  const { error } = await supabaseClient.rpc('register_push', {
+    p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth, p_ua: navigator.userAgent.slice(0, 200)
+  });
+  if (error) throw error;
+}
+async function subscribeNow() {
+  const reg = await getReg();
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY) });
+  await syncSubscription(sub);
+}
+
+async function initPush() {
+  const banner = $('pushBanner');
+  const dismissed = (() => { try { return localStorage.getItem('wasl_push_dismissed') === '1'; } catch { return false; } })();
+  $('btnDismissPush').onclick = () => { banner.classList.add('hidden'); try { localStorage.setItem('wasl_push_dismissed', '1'); } catch {} };
+  $('btnEnablePush').onclick = enablePush;
+
+  if (!PUSH_SUPPORTED) {
+    // iPhone/iPad: الإشعارات تعمل فقط بعد إضافة الموقع للشاشة الرئيسية
+    if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !dismissed) {
+      $('pbTitle').textContent = 'لتفعيل الإشعارات على آيفون';
+      $('pbText').textContent = 'اضغط زر المشاركة ثم «إضافة إلى الشاشة الرئيسية» وافتح التطبيق من هناك.';
+      $('btnEnablePush').classList.add('hidden');
+      banner.classList.remove('hidden');
+    }
+    return;
+  }
+  if (Notification.permission === 'granted') {
+    try { await subscribeNow(); } catch (e) { console.warn('push sync:', e); }
+    banner.classList.add('hidden');
+  } else if (Notification.permission === 'default' && !dismissed) {
+    banner.classList.remove('hidden');
+  }
+}
+
+async function enablePush() {
+  const btn = $('btnEnablePush'); btn.disabled = true;
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { toast('لم يتم السماح بالإشعارات'); return; }
+    await subscribeNow();
+    $('pushBanner').classList.add('hidden');
+    toast('تم تفعيل الإشعارات 🔔');
+  } catch (err) {
+    toast('تعذر تفعيل الإشعارات: ' + (err.message || err));
+  } finally { btn.disabled = false; }
+}
+
+async function logout() {
+  try {
+    if (PUSH_SUPPORTED) {
+      const reg = await getReg();
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) await supabaseClient.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+    }
+  } catch (e) { /* نتجاهل ونكمل الخروج */ }
+  await supabaseClient.auth.signOut();
+}
+
+document.addEventListener('contextmenu', e => { if (e.target.tagName === 'VIDEO' || e.target.tagName === 'IMG') e.preventDefault(); });
+</script>
+</body>
+</html>
