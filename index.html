@@ -1119,15 +1119,16 @@ const RTC_CALL_CONFIG = {
   iceTransportPolicy: 'all',
   bundlePolicy: 'max-bundle',
   iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+    { urls: 'stun:stun.relay.metered.ca:80' },
+    { urls: 'turn:continue.metered.live:80', username: 'ca48fbf910d19aedd1f938eb', credential: '0M7OjkuXstJGmTyp' },
+    { urls: 'turn:continue.metered.live:443', username: 'ca48fbf910d19aedd1f938eb', credential: '0M7OjkuXstJGmTyp' },
+    { urls: 'turn:continue.metered.live:443?transport=tcp', username: 'ca48fbf910d19aedd1f938eb', credential: '0M7OjkuXstJGmTyp' },
+    { urls: 'turns:continue.metered.live:443?transport=tcp', username: 'ca48fbf910d19aedd1f938eb', credential: '0M7OjkuXstJGmTyp' }
   ]
 };
 // ضع اسم تطبيق Metered ومفتاح API هنا
 const METERED_HOST = 'continue.metered.live';
-const METERED_KEY = 'oMUevTn313NszrRYsrq6vATBcLVAEeqi5FSWAmXMCFxzOpEC';
+const METERED_KEY = '';
 async function fetchIceConfig() {
   if (!METERED_HOST || !METERED_KEY) return RTC_CALL_CONFIG;
   try {
@@ -2125,22 +2126,24 @@ const ROOM_COVERS = [
   'linear-gradient(135deg,#312e81,#0f172a)'
 ];
 const ROOM_SEATS = 8;
-const RTC_CONFIG = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+const RTC_CONFIG = RTC_CALL_CONFIG;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 Object.assign(ICONS, { crown: '<path d="M2 8l5 4 5-7 5 7 5-4-2.5 11h-15z"/>' });
 
 let roomFilter = 'all', roomsCache = [], crCover = 0, rv = null;
 let myFavs = new Set();
+let crCoverFileObj = null;
 const roomWatchers = new Map(), roomPresence = new Map();
 
 const coverOf = r => ROOM_COVERS[(r.cover_idx || 0) % ROOM_COVERS.length];
+const coverCss = r => r.cover_url ? `url("${r.cover_url}") center/cover no-repeat` : coverOf(r);
 const ROOM_BG = {
   bg1: 'https://f.top4top.io/p_3952mhafz0.jpg',
   bg2: 'https://g.top4top.io/p_3952z4l050.jpeg',
   bg3: 'https://h.top4top.io/p_3952df2l70.jpeg'
 };
 const ROOM_BG_KEYS = Object.keys(ROOM_BG);
-const bgOf = r => ROOM_BG_KEYS.includes(r.background_key)
+const bgOf = r => r.background_url ? `linear-gradient(rgba(6,6,12,.5),rgba(6,6,12,.82)), url("${r.background_url}") center/cover no-repeat` : ROOM_BG_KEYS.includes(r.background_key)
   ? `linear-gradient(rgba(6,6,12,.5),rgba(6,6,12,.82)), url('${ROOM_BG[r.background_key]}') center/cover no-repeat`
   : coverOf(r);
 const avatarInner = m => m.avatar ? `<img src="${esc(m.avatar)}" alt="">` : esc((m.name || 'و').trim().charAt(0) || 'و');
@@ -2230,7 +2233,7 @@ function roomCardHtml(r) {
   const o = profileCache[r.owner_id] || { full_name: 'مستخدم' };
   const mem = roomPresence.get(r.id) || [];
   return `
-  <article class="room-card${r.is_premium ? ' premium' : ''}" style="--cover:${coverOf(r)}" onclick="joinRoom('${r.id}')">
+  <article class="room-card${r.is_premium ? ' premium' : ''}" style="--cover:${coverCss(r)}" onclick="joinRoom('${r.id}')">
     <div class="rc-cover">
       ${r.is_premium ? `<span class="rc-premium">${ico('crown', 13)} مميزة</span>` : '<span></span>'}
       <span class="rc-count"><button class="rc-fav${myFavs.has(r.id) ? ' on' : ''}" onclick="event.stopPropagation();toggleFav('${r.id}')" title="المفضلة">${ico('heart', 15)}</button>${ico('users', 14)} <b id="cnt-${r.id}">${mem.length}</b></span>
@@ -2250,7 +2253,8 @@ function roomCardHtml(r) {
 function watchRooms() {
   roomsCache.forEach(r => {
     if (roomWatchers.has(r.id)) return;
-    const ch = supabaseClient.channel('voice-room-' + r.id, { config: { presence: { key: me.id } } });
+    // قناة منفصلة عن قناة الغرفة نفسها حتى لا يقطع إغلاقُ المراقب اتصال العضو داخل الغرفة
+    const ch = supabaseClient.channel('lobby-room-' + r.id);
     ch.on('presence', { event: 'sync' }, () => {
       roomPresence.set(r.id, collectMembers(ch.presenceState()));
       refreshRoomCard(r.id);
@@ -2272,6 +2276,7 @@ function stopRoomWatchers() {
 // ---------- Create ----------
 window.openCreateRoom = () => {
   crCover = 0;
+  crCoverFileObj = null;
   const verified = !!me.is_verified;
   $('modalRoot').innerHTML = `
   <div class="modal-overlay" onclick="closeModal()">
@@ -2281,6 +2286,9 @@ window.openCreateRoom = () => {
       <input id="crTitle" class="form-input" maxlength="60" placeholder="مثال: سهرة الأصدقاء ✨">
       <label class="form-label">وصف قصير (اختياري)</label>
       <textarea id="crDesc" class="form-input" rows="2" maxlength="200"></textarea>
+      <label class="form-label">صورة الغلاف من هاتفك (اختياري)</label>
+      <label class="rs-file" style="margin-bottom:8px">اختر صورة<input type="file" accept="image/*" onchange="crPickCoverFile(this)"></label>
+      <img id="crCoverPrev" alt="" style="display:none;width:100%;height:110px;object-fit:cover;border-radius:16px;margin-bottom:10px">
       <label class="form-label">لون الغلاف</label>
       <div class="cover-pick">${ROOM_COVERS.map((c, i) => `<button type="button" class="cp${i === 0 ? ' sel' : ''}" style="background:${c}" onclick="pickCover(${i}, this)"></button>`).join('')}</div>
       <label class="premium-toggle${verified ? '' : ' locked'}">
@@ -2292,6 +2300,19 @@ window.openCreateRoom = () => {
     </div>
   </div>`;
 };
+window.crPickCoverFile = (input) => {
+  const f = input.files?.[0]; if (!f) return;
+  crCoverFileObj = f;
+  const img = $('crCoverPrev');
+  if (img) { img.src = URL.createObjectURL(f); img.style.display = 'block'; }
+};
+async function uploadRoomImage(file, folder) {
+  const ext = ((file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')) || 'jpg';
+  const path = `${folder}/${me.id}_${Date.now()}.${ext}`;
+  const { error } = await supabaseClient.storage.from('post-images').upload(path, file, { contentType: file.type || 'image/jpeg' });
+  if (error) throw error;
+  return supabaseClient.storage.from('post-images').getPublicUrl(path).data.publicUrl;
+}
 window.pickCover = (i, el) => {
   crCover = i;
   el.parentElement.querySelectorAll('.cp').forEach(x => x.classList.toggle('sel', x === el));
@@ -2305,8 +2326,13 @@ window.createRoom = async () => {
   if (!moderateText(title).ok || !moderateText(desc).ok) return toast('المحتوى يحتوي على كلمات ممنوعة.');
   const premium = !!$('crPremium').checked && !!me.is_verified;
   const btn = $('crSave'); btn.disabled = true;
+  let coverUrl = null;
+  if (crCoverFileObj) {
+    try { coverUrl = await uploadRoomImage(crCoverFileObj, 'room-covers'); }
+    catch (e) { btn.disabled = false; return toast('تعذر رفع صورة الغلاف: ' + e.message); }
+  }
   const { data, error } = await supabaseClient.from('voice_rooms')
-    .insert({ owner_id: me.id, title, description: desc || null, is_premium: premium, cover_idx: crCover })
+    .insert({ owner_id: me.id, title, description: desc || null, is_premium: premium, cover_idx: crCover, cover_url: coverUrl })
     .select().single();
   btn.disabled = false;
   if (error) return toast('تعذر إنشاء الغرفة: ' + error.message);
@@ -2340,7 +2366,7 @@ window.joinRoom = async (roomId) => {
          muted: forced, forcedMute: forced, speaking: false, members: [], vad: null, actx: null, lastTrack: 0, subscribed: false };
   roomChatMsgs = [];
   renderRoomView();
-  supabaseClient.from('voice_rooms').select('title, background_key, music_url, music_started_at').eq('id', room.id).maybeSingle()
+  supabaseClient.from('voice_rooms').select('title, background_key, background_url, music_url, music_started_at').eq('id', room.id).maybeSingle()
     .then(({ data: fresh }) => { if (fresh && rv && rv.room.id === room.id) applyRoomState(fresh); });
 
   let stream = null;
@@ -2381,7 +2407,7 @@ function broadcastRoomState() {
   if (!rv?.ch) return;
   const r = rv.room;
   rv.ch.send({ type: 'broadcast', event: 'room', payload: {
-    title: r.title, background_key: r.background_key || null,
+    title: r.title, background_key: r.background_key || null, background_url: r.background_url || null,
     music_url: r.music_url || null, music_started_at: r.music_started_at || null } });
 }
 
@@ -2390,6 +2416,7 @@ function applyRoomState(s) {
   const r = rv.room;
   if ('title' in s && s.title) r.title = s.title;
   if ('background_key' in s) r.background_key = s.background_key;
+  if ('background_url' in s) r.background_url = s.background_url;
   if ('music_url' in s) r.music_url = s.music_url;
   if ('music_started_at' in s) r.music_started_at = s.music_started_at;
   renderRoomView();
@@ -2423,6 +2450,8 @@ window.openRoomSettings = () => {
       <button class="btn-save" style="margin-top:10px" onclick="saveRoomTitle()">حفظ الاسم</button>
       <label class="rs-label">خلفية الغرفة</label>
       <div class="bg-grid">${thumbs}<button type="button" class="bg-pick none ${!ROOM_BG_KEYS.includes(r.background_key) ? 'sel' : ''}" onclick="pickRoomBg('',this)">افتراضي</button></div>
+      <label class="rs-label">رفع خلفية من هاتفك</label>
+      <label class="rs-file" style="width:100%">اختر صورة<input type="file" accept="image/*" onchange="uploadRoomBg(this)"></label>
       <label class="rs-label">موسيقى الغرفة (يسمعها الجميع)</label>
       <div class="rs-music">
         <label class="rs-file">${ico('mic', 16)} رفع ملف صوتي وتشغيله<input type="file" accept="audio/*" onchange="uploadRoomMusic(this)"></label>
@@ -2445,10 +2474,10 @@ window.saveRoomTitle = async () => {
 window.pickRoomBg = async (k, btn) => {
   if (!rv || rv.room.owner_id !== me.id) return;
   const key = ROOM_BG_KEYS.includes(k) ? k : null;
-  const { error } = await supabaseClient.from('voice_rooms').update({ background_key: key }).eq('id', rv.room.id);
+  const { error } = await supabaseClient.from('voice_rooms').update({ background_key: key, background_url: null }).eq('id', rv.room.id);
   if (error) return toast('تعذر الحفظ: ' + error.message);
   document.querySelectorAll('.bg-pick').forEach(b => b.classList.toggle('sel', b === btn));
-  applyRoomState({ background_key: key }); broadcastRoomState();
+  applyRoomState({ background_key: key, background_url: null }); broadcastRoomState();
   toast('تم تغيير خلفية الغرفة');
 };
 
@@ -2468,6 +2497,19 @@ window.uploadRoomMusic = async (input) => {
   applyRoomState({ music_url: data.publicUrl, music_started_at: started }); broadcastRoomState();
   if (note()) note().textContent = 'الموسيقى تعمل الآن للجميع';
   toast('تم تشغيل الموسيقى للجميع 🎵');
+};
+
+window.uploadRoomBg = async (input) => {
+  const file = input.files?.[0];
+  if (!file || !rv || rv.room.owner_id !== me.id) return;
+  toast('جارٍ رفع الخلفية…');
+  let url;
+  try { url = await uploadRoomImage(file, 'room-bg'); }
+  catch (e) { return toast('تعذر رفع الخلفية: ' + e.message); }
+  const { error } = await supabaseClient.from('voice_rooms').update({ background_url: url, background_key: null }).eq('id', rv.room.id);
+  if (error) return toast('تعذر الحفظ: ' + error.message);
+  applyRoomState({ background_url: url, background_key: null }); broadcastRoomState();
+  toast('تم تعيين خلفية الغرفة ✨');
 };
 
 window.stopRoomMusic = async () => {
