@@ -2501,7 +2501,9 @@ window.uploadRoomMusic = async (input) => {
 
 window.uploadRoomBg = async (input) => {
   const file = input.files?.[0];
-  if (!file || !rv || rv.room.owner_id !== me.id) return;
+  if (!file) return toast('لم يتم اختيار صورة');
+  if (!rv) return toast('افتح الغرفة أولاً ثم أعد المحاولة');
+  if (rv.room.owner_id !== me.id) return toast('هذا الإجراء لصاحب الغرفة فقط');
   toast('جارٍ رفع الخلفية…');
   let url;
   try { url = await uploadRoomImage(file, 'room-bg'); }
