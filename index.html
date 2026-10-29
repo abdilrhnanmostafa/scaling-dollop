@@ -1148,31 +1148,41 @@ const descOf = pc => ({ type: pc.localDescription.type, sdp: pc.localDescription
 
 function listenForIncomingCalls() {
   if (userCh) return;
-  userCh = supabaseClient.channel('user-' + me.id)
-    .on('broadcast', { event: 'ring' }, ({ payload }) => { if (payload.to === me.id) onRing(payload); })
+  // كل إشارات المكالمة تمر عبر جدول call_signals فقط
+  userCh = supabaseClient.channel('db-calls-' + me.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'call_signals', filter: 'to_user=eq.' + me.id },
+      ({ new: row }) => onCallRow(row))
     .subscribe();
 }
 
+// توجيه صفوف الجدول: رنين جديد أو إشارة لمكالمة جارية
+function onCallRow(r) {
+  if (!r || r.to_user !== me.id) return;
+  if (r.kind === 'ring') {
+    if (!call) onRing({ from: r.from_user, call_id: r.call_id, isVideo: !!r.payload?.isVideo, name: r.payload?.name });
+    return;
+  }
+  if (call && r.call_id === call.id && r.from_user === call.peer) onSig({ ...(r.payload || {}), kind: r.kind });
+}
+
 function openPairChannel(c) {
-  const ch = supabaseClient.channel('call-' + c.id);
-  ch.on('broadcast', { event: 'sig' }, ({ payload }) => { if (call === c) onSig(payload); })
-    .subscribe(status => {
-      if (status === 'SUBSCRIBED' && c.role === 'callee') {
-        // المستقبل يعلن جاهزيته مرات متكررة حتى تصل إشارة العرض (offer) لضمان عدم ضياع الرسالة
-        const beat = () => { if (call !== c || c.gotOffer) return; ch.send({ type: 'broadcast', event: 'sig', payload: { kind: 'ready' } }); c.readyTimer = setTimeout(beat, 1500); };
-        beat();
-      }
-    });
-  return ch;
+  if (c.role === 'callee') {
+    // المستقبل يعلن جاهزيته كل ثانيتين حتى تصله إشارة العرض (offer)
+    const beat = () => { if (call !== c || c.gotOffer) return; sendSig(c, { kind: 'ready' }); c.readyTimer = setTimeout(beat, 2000); };
+    beat();
+  }
+  return true;
 }
 
 function sendSig(c, payload) {
-  c.pairCh?.send({ type: 'broadcast', event: 'sig', payload });
+  if (!c?.id || !c.peer) return;
+  supabaseClient.from('call_signals').insert({ call_id: c.id, from_user: me.id, to_user: c.peer, kind: payload.kind, payload })
+    .then(({ error }) => { if (error) console.warn('call signal insert', error); });
 }
 
 async function onRing(p) {
   if (call) return; // مشغول
-  call = { id: pairIdOf(me.id, p.from), peer: p.from, isVideo: !!p.isVideo, role: 'callee',
+  call = { id: p.call_id, peer: p.from, isVideo: !!p.isVideo, role: 'callee',
            pc: null, stream: null, pairCh: null, accepted: false, answered: false, offer: null, muted: false, camOff: false };
   const c = call;
   if (!profileCache[p.from]) {
@@ -1191,7 +1201,7 @@ window.startCall = async (isVideo) => {
   let stream;
   try { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideo }); }
   catch (e) { return toast('تعذر الوصول للميكروفون أو الكاميرا. تأكد من الصلاحيات.'); }
-  call = { id: pairIdOf(me.id, peer), peer, isVideo: !!isVideo, role: 'caller', pc: null, stream,
+  call = { id: pairIdOf(me.id, peer) + '_' + Date.now(), peer, isVideo: !!isVideo, role: 'caller', pc: null, stream,
            pairCh: null, accepted: true, connected: false, muted: false, camOff: false };
   const c = call;
   c.iceCfg = await fetchIceConfig();
@@ -1207,14 +1217,9 @@ window.startCall = async (isVideo) => {
     endCall(true);
   }, 45000);
 
-  // إرسال إشعار الرنين عبر قناة المستخدم المستهدف
-  const ring = supabaseClient.channel('user-' + peer);
-  ring.subscribe(async status => {
-    if (status === 'SUBSCRIBED') {
-      await ring.send({ type: 'broadcast', event: 'ring', payload: { to: peer, from: me.id, isVideo: !!isVideo, name: me.full_name } });
-      setTimeout(() => supabaseClient.removeChannel(ring), 400);
-    }
-  });
+  // إرسال إشعار الرنين عبر جدول call_signals
+  const { error: ringErr } = await supabaseClient.from('call_signals').insert({ call_id: c.id, from_user: me.id, to_user: peer, kind: 'ring', payload: { isVideo: !!isVideo, name: me.full_name } });
+  if (ringErr) { toast('تعذر إرسال الاتصال. تأكد من تشغيل جدول call_signals'); endCall(false); }
 };
 
 async function onSig(p) {
@@ -1222,6 +1227,7 @@ async function onSig(p) {
   try {
     if (p.kind === 'ready' && c.role === 'caller' && !c.offered) {
       c.offered = true;
+      setCallStatus('تم الرد… جارٍ إرسال بيانات الاتصال');
       c.pc = makePC(c);
       c.stream.getTracks().forEach(t => c.pc.addTrack(t, c.stream));
       await c.pc.setLocalDescription(await c.pc.createOffer());
@@ -1237,10 +1243,11 @@ async function onSig(p) {
       c.gotOffer = true;
       clearTimeout(c.readyTimer);
       c.offer = p.sdp;
+      setCallStatus('وصلت بيانات الاتصال… جارٍ الرد');
       if (c.stream && !c.answered) await makeAnswer(c);
     } else if (p.kind === 'answer' && c.role === 'caller' && c.pc) {
       c.gotAnswer = true;
-      setCallStatus('جارٍ الاتصال…');
+      setCallStatus('تم استلام الرد… جارٍ تبادل مسارات الشبكة');
       await c.pc.setRemoteDescription(p.sdp);
     } else if (p.kind === 'end') {
       endCall(false);
@@ -1285,7 +1292,7 @@ function makePC(c) {
   pc.oniceconnectionstatechange = () => {
     if (call !== c) return;
     const ice = pc.iceConnectionState;
-    if (ice === 'checking') setCallStatus('جارٍ الاتصال…');
+    if (ice === 'checking') setCallStatus('تبادل مسارات الشبكة…');
     if (ice === 'failed') { toast('تعذر المرور عبر الشبكة. جرّب Wi-Fi أو شبكة أخرى'); endCall(true); }
   };
   return pc;
@@ -1353,6 +1360,7 @@ async function makeAnswer(c) {
   await c.pc.setRemoteDescription(c.offer);
   await c.pc.setLocalDescription(await c.pc.createAnswer());
   await waitIce(c.pc);
+  setCallStatus('تم إرسال الرد… جارٍ تبادل مسارات الشبكة');
   sendSig(c, { kind: 'answer', sdp: descOf(c.pc) });
 }
 
@@ -1363,8 +1371,8 @@ window.acceptCall = async () => {
   c.iceCfg = await fetchIceConfig();
   try { c.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: c.isVideo }); }
   catch (e) { toast('تعذر الوصول للميكروفون أو الكاميرا'); return rejectCall(); }
-  setCallStatus('جارٍ الاتصال…');
-  showCallOverlay('جارٍ الاتصال…', profileCache[c.peer] || { full_name: 'مستخدم' });
+  setCallStatus('بانتظار بيانات المتصل…');
+  showCallOverlay('بانتظار بيانات المتصل…', profileCache[c.peer] || { full_name: 'مستخدم' });
   if (c.offer) await makeAnswer(c);
 };
 
@@ -1384,7 +1392,6 @@ window.endCall = (notify = true) => {
   clearInterval(c.timerIv);
   c.pc?.close();
   c.stream?.getTracks().forEach(t => t.stop());
-  if (c.pairCh) { const ch = c.pairCh; setTimeout(() => supabaseClient.removeChannel(ch), 400); }
   $('callOverlay')?.remove();
 };
 
