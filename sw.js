@@ -17,7 +17,9 @@ self.addEventListener('push', event => {
     data: p.data || {},
     dir: 'rtl',
     lang: 'ar',
-    vibrate: [120, 60, 120],
+    silent: false,
+    requireInteraction: false,
+    vibrate: [200, 100, 200, 100, 200],
     timestamp: Date.now()
   };
 

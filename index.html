@@ -1227,6 +1227,12 @@ async function onSig(p) {
       await c.pc.setLocalDescription(await c.pc.createOffer());
       await waitIce(c.pc);
       sendSig(c, { kind: 'offer', sdp: descOf(c.pc) });
+    } else if (p.kind === 'offer' && p.restart && c.role === 'callee' && c.pc) {
+      // إعادة تفاوض بعد انقطاع الشبكة
+      await c.pc.setRemoteDescription(p.sdp);
+      await c.pc.setLocalDescription(await c.pc.createAnswer());
+      await waitIce(c.pc);
+      sendSig(c, { kind: 'answer', sdp: descOf(c.pc), restart: true });
     } else if (p.kind === 'offer' && c.role === 'callee' && !c.gotOffer) {
       c.gotOffer = true;
       clearTimeout(c.readyTimer);
@@ -1253,7 +1259,7 @@ function makePC(c) {
     const stream = e.streams[0] || new MediaStream([e.track]);
     if (e.track.kind === 'audio') {
       const a = $('callAudio');
-      if (a) { a.srcObject = stream; a.play?.().catch(() => toast('اضغط على الشاشة لتفعيل الصوت')); }
+      if (a) { a.srcObject = stream; playRemoteAudio(a); }
     } else if (e.track.kind === 'video') {
       const rv = $('callRemote');
       if (rv) { rv.srcObject = stream; rv.play?.().catch(() => {}); }
@@ -1269,7 +1275,12 @@ function makePC(c) {
       setCallStatus('انقطع الاتصال… جارٍ الاستعادة');
       c.disconnectTimer = setTimeout(() => { if (call === c) { toast('انقطع الاتصال'); endCall(true); } }, 8000);
     }
-    if (st === 'failed') { toast('تعذر الاتصال بين الجهازين. قد تحتاج الشبكة إلى مزيد من الوقت'); endCall(true); }
+    if (st === 'failed') {
+      // محاولة استعادة الاتصال مرة واحدة عبر إعادة التفاوض (مفيد عند التنقل بين Wi-Fi وبيانات الهاتف)
+      if (c.role === 'caller' && !c.restartTried) { c.restartTried = true; restartCallIce(c); return; }
+      toast('تعذر الاتصال بين الجهازين. جرّب Wi-Fi أو شبكة أخرى');
+      endCall(true);
+    }
   };
   pc.oniceconnectionstatechange = () => {
     if (call !== c) return;
@@ -1291,6 +1302,38 @@ function startCallTimer(c) {
   };
   tick();
   c.timerIv = setInterval(tick, 1000);
+}
+
+// تشغيل صوت الطرف الآخر؛ إن منع المتصفح التشغيل التلقائي ننتظر أول نقرة للمستخدم
+function playRemoteAudio(a) {
+  const p = a.play?.();
+  if (!p) return;
+  p.catch(() => {
+    const unlock = () => {
+      a.play().then(() => document.removeEventListener('click', unlock, true)).catch(() => {});
+    };
+    document.addEventListener('click', unlock, true);
+    toast('اضغط على الشاشة لتفعيل صوت المكالمة');
+  });
+}
+
+// إعادة إنشاء مسار الاتصال من جهة المتصل دون إنهاء المكالمة
+async function restartCallIce(c) {
+  if (call !== c || !c.pc) return;
+  try {
+    setCallStatus('جارٍ إعادة الاتصال…');
+    await c.pc.setLocalDescription(await c.pc.createOffer({ iceRestart: true }));
+    await waitIce(c.pc);
+    sendSig(c, { kind: 'offer', sdp: descOf(c.pc), restart: true });
+    // إن لم يتصل خلال 15 ثانية تنتهي المكالمة بوضوح
+    setTimeout(() => {
+      if (call === c && !c.connected) { toast('تعذر الاتصال بين الجهازين. جرّب Wi-Fi أو شبكة أخرى'); endCall(true); }
+    }, 15000);
+  } catch (e) {
+    console.warn('ice restart', e);
+    toast('تعذر الاتصال بين الجهازين. جرّب Wi-Fi أو شبكة أخرى');
+    endCall(true);
+  }
 }
 
 function waitIce(pc) {
