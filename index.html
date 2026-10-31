@@ -1142,71 +1142,84 @@ async function fetchIceConfig() {
     return RTC_CALL_CONFIG;
   }
 }
-let call = null, userCh = null;
-const pairIdOf = (a, b) => [a, b].sort().join('_');
-const descOf = pc => ({ type: pc.localDescription.type, sdp: pc.localDescription.sdp });
+let call = null, callCh = null, callPollTimer = null;
+const callSeen = new Set();
+const CALL_TIMEOUT_MS = 45000;
 
+// ================= CALLS v2 =================
+// كل المكالمة في صف واحد من جدول calls: المتصل يكتب العرض (offer) في الصف،
+// والمستقبل يكتب الرد (answer) في الصف نفسه. لا توجد مصافحة متعددة الخطوات.
 function listenForIncomingCalls() {
-  if (userCh) return;
-  // كل إشارات المكالمة تمر عبر جدول call_signals فقط
-  userCh = supabaseClient.channel('db-calls-' + me.id)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'call_signals', filter: 'to_user=eq.' + me.id },
-      ({ new: row }) => onCallRow(row))
+  if (callCh) return;
+  callCh = supabaseClient.channel('calls-in-' + me.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'calls', filter: 'callee_id=eq.' + me.id },
+      ({ new: row }) => onIncomingCall(row))
     .subscribe();
+  // احتياط: البحث عن المكالمات الواردة كل ثانيتين
+  setInterval(async () => {
+    if (call) return;
+    const since = new Date(Date.now() - 60000).toISOString();
+    const { data } = await supabaseClient.from('calls').select('*')
+      .eq('callee_id', me.id).eq('status', 'ringing').gt('created_at', since).limit(1);
+    if (data?.[0]) onIncomingCall(data[0]);
+  }, 2000);
 }
 
-// توجيه صفوف الجدول: رنين جديد أو إشارة لمكالمة جارية
-const seenSigIds = new Set();
-let sigPollTimer = null;
-// احتياط: قراءة الإشارات من الجدول كل 1.5 ثانية أثناء المكالمة، إن فاتت Realtime أي صف
-function pollCallSignals(c) {
-  clearInterval(sigPollTimer);
-  sigPollTimer = setInterval(async () => {
-    if (call !== c) return clearInterval(sigPollTimer);
-    const { data } = await supabaseClient.from('call_signals').select('*')
-      .eq('to_user', me.id).eq('call_id', c.id).order('id', { ascending: true }).limit(50);
-    (data || []).forEach(onCallRow);
+function callSeenOnce(key) {
+  if (callSeen.has(key)) return true;
+  callSeen.add(key);
+  return false;
+}
+
+async function ensureCallProfile(uid) {
+  if (profileCache[uid]) return;
+  const { data } = await supabaseClient.from('profiles').select('*').eq('id', uid).maybeSingle();
+  if (data) profileCache[data.id] = data;
+}
+
+function watchCallRow(c) {
+  if (c.watchCh) return;
+  c.watchCh = supabaseClient.channel('call-row-' + c.id)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'calls', filter: 'id=eq.' + c.id },
+      ({ new: row }) => onCallRowUpdate(c, row))
+    .subscribe();
+  // احتياط: قراءة الصف كل 1.5 ثانية حتى لو فاتت Realtime أي تحديث
+  clearInterval(callPollTimer);
+  callPollTimer = setInterval(async () => {
+    if (call !== c) return clearInterval(callPollTimer);
+    const { data } = await supabaseClient.from('calls').select('*').eq('id', c.id).maybeSingle();
+    if (data) onCallRowUpdate(c, data);
   }, 1500);
 }
 
-function onCallRow(r) {
-  if (!r || r.to_user !== me.id) return;
-  if (r.id != null) { if (seenSigIds.has(r.id)) return; seenSigIds.add(r.id); }
-  if (r.kind === 'ring') {
-    if (!call) onRing({ from: r.from_user, call_id: r.call_id, isVideo: !!r.payload?.isVideo, name: r.payload?.name });
-    return;
-  }
-  if (call && r.call_id === call.id && r.from_user === call.peer) onSig({ ...(r.payload || {}), kind: r.kind });
+function onIncomingCall(row) {
+  if (!row || row.callee_id !== me.id || row.status !== 'ringing' || call) return;
+  if (callSeenOnce('in:' + row.id)) return;
+  const c = { id: row.id, peer: row.caller_id, isVideo: !!row.is_video, role: 'callee', offer: row.offer,
+              pc: null, stream: null, accepted: false, connected: false, muted: false, camOff: false };
+  call = c;
+  watchCallRow(c);
+  ensureCallProfile(c.peer).then(() => {
+    if (call === c) showCallOverlay('مكالمة واردة…', profileCache[c.peer] || { full_name: 'مستخدم' });
+  });
+  c.timeout = setTimeout(() => { if (call === c && !c.accepted) endCall(true, 'missed'); }, CALL_TIMEOUT_MS);
 }
 
-function openPairChannel(c) {
-  if (c.role === 'callee') {
-    // المستقبل يعلن جاهزيته كل ثانيتين حتى تصله إشارة العرض (offer)
-    const beat = () => { if (call !== c || c.gotOffer) return; sendSig(c, { kind: 'ready' }); c.readyTimer = setTimeout(beat, 2000); };
-    beat();
+async function onCallRowUpdate(c, row) {
+  if (call !== c || !row) return;
+  if (c.role === 'caller') {
+    if (row.answer && !c.gotAnswer && c.pc) {
+      c.gotAnswer = true;
+      setCallStatus('تم استلام الرد… جارٍ الاتصال');
+      try { await c.pc.setRemoteDescription(row.answer); }
+      catch (e) { console.warn('set answer', e); toast('تعذر إتمام الاتصال'); endCall(true); return; }
+    }
+    if (row.status === 'rejected') { toast('رفض المستخدم المكالمة'); endCall(false); }
+    else if (row.status === 'missed' || row.status === 'ended') { toast('انتهت المكالمة'); endCall(false); }
+  } else if (row.status === 'ended' || row.status === 'missed') {
+    toast('انتهت المكالمة');
+    endCall(false);
   }
-  return true;
-}
-
-function sendSig(c, payload) {
-  if (!c?.id || !c.peer) return;
-  supabaseClient.from('call_signals').insert({ call_id: c.id, from_user: me.id, to_user: c.peer, kind: payload.kind, payload })
-    .then(({ error }) => { if (error) console.warn('call signal insert', error); });
-}
-
-async function onRing(p) {
-  if (call) return; // مشغول
-  call = { id: p.call_id, peer: p.from, isVideo: !!p.isVideo, role: 'callee',
-           pc: null, stream: null, pairCh: null, accepted: false, answered: false, offer: null, muted: false, camOff: false };
-  const c = call;
-  if (!profileCache[p.from]) {
-    const { data } = await supabaseClient.from('profiles').select('*').eq('id', p.from).maybeSingle();
-    if (data) profileCache[data.id] = data;
-  }
-  pollCallSignals(c);
-  showCallOverlay('مكالمة واردة…', profileCache[p.from] || { full_name: p.name || 'مستخدم' });
-  c.pairCh = openPairChannel(c);
-  c.timeout = setTimeout(() => { if (call === c && !c.accepted) { sendSig(c, { kind: 'end' }); endCall(false); } }, 45000);
 }
 
 window.startCall = async (isVideo) => {
@@ -1214,67 +1227,87 @@ window.startCall = async (isVideo) => {
   if (call) return toast('هناك مكالمة جارية بالفعل');
   const peer = currentChatUser;
   let stream;
-  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideo }); }
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: !!isVideo }); }
   catch (e) { return toast('تعذر الوصول للميكروفون أو الكاميرا. تأكد من الصلاحيات.'); }
-  call = { id: pairIdOf(me.id, peer) + '_' + Date.now(), peer, isVideo: !!isVideo, role: 'caller', pc: null, stream,
-           pairCh: null, accepted: true, connected: false, muted: false, camOff: false };
-  const c = call;
-  pollCallSignals(c);
-  c.iceCfg = await fetchIceConfig();
-  if (!profileCache[peer]) {
-    const { data } = await supabaseClient.from('profiles').select('*').eq('id', peer).maybeSingle();
-    if (data) profileCache[data.id] = data;
+  const c = { id: null, peer, isVideo: !!isVideo, role: 'caller', pc: null, stream, accepted: true,
+              connected: false, gotAnswer: false, muted: false, camOff: false };
+  call = c;
+  await ensureCallProfile(peer);
+  if (call !== c) return;
+  showCallOverlay('جارٍ تجهيز الاتصال…', profileCache[peer] || { full_name: 'مستخدم' });
+  try {
+    c.iceCfg = await fetchIceConfig();
+    c.pc = makePC(c);
+    stream.getTracks().forEach(t => c.pc.addTrack(t, stream));
+    await c.pc.setLocalDescription(await c.pc.createOffer());
+    await waitIce(c.pc);
+    const { data, error } = await supabaseClient.from('calls')
+      .insert({ caller_id: me.id, callee_id: peer, is_video: !!isVideo, status: 'ringing', offer: descOf(c.pc) })
+      .select('id').single();
+    if (error) throw error;
+    if (call !== c) { // أُلغيت المكالمة أثناء التجهيز
+      await supabaseClient.from('calls').update({ status: 'ended' }).eq('id', data.id);
+      return;
+    }
+    c.id = data.id;
+  } catch (e) {
+    console.warn('call start', e);
+    toast('تعذر بدء المكالمة: ' + (e.message || 'خطأ غير معروف'));
+    endCall(false);
+    return;
   }
-  showCallOverlay('جارٍ الاتصال…', profileCache[peer] || { full_name: 'مستخدم' });
-  c.pairCh = openPairChannel(c);
+  watchCallRow(c);
+  setCallStatus('يرنّ…');
   c.timeout = setTimeout(() => {
-    if (call !== c || c.connected) return;
-    toast(c.gotAnswer ? 'تعذر إنشاء الاتصال بين الجهازين. جرّب Wi-Fi أو شبكة أخرى' : 'لم يرد المستخدم');
-    endCall(true);
-  }, 45000);
-
-  // إرسال إشعار الرنين عبر جدول call_signals
-  const { error: ringErr } = await supabaseClient.from('call_signals').insert({ call_id: c.id, from_user: me.id, to_user: peer, kind: 'ring', payload: { isVideo: !!isVideo, name: me.full_name } });
-  if (ringErr) { toast('تعذر إرسال الاتصال. تأكد من تشغيل جدول call_signals'); endCall(false); }
+    if (call === c && !c.gotAnswer && !c.connected) { toast('لم يرد المستخدم'); endCall(true, 'missed'); }
+  }, CALL_TIMEOUT_MS);
 };
 
-async function onSig(p) {
-  const c = call; if (!c) return;
+window.acceptCall = async () => {
+  const c = call; if (!c || c.role !== 'callee' || c.accepted) return;
+  c.accepted = true;
+  clearTimeout(c.timeout);
+  renderCallControls();
+  setCallStatus('جارٍ الرد…');
+  try { c.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: c.isVideo }); }
+  catch (e) { toast('تعذر الوصول للميكروفون أو الكاميرا'); return rejectCall(); }
+  if (call !== c) return;
+  if (c.isVideo) { const lv = $('callLocal'); if (lv) lv.srcObject = c.stream; }
   try {
-    if (p.kind === 'ready' && c.role === 'caller' && !c.offered) {
-      c.offered = true;
-      setCallStatus('تم الرد… جارٍ إرسال بيانات الاتصال');
-      c.pc = makePC(c);
-      c.stream.getTracks().forEach(t => c.pc.addTrack(t, c.stream));
-      await c.pc.setLocalDescription(await c.pc.createOffer());
-      await waitIce(c.pc);
-      sendSig(c, { kind: 'offer', sdp: descOf(c.pc) });
-    } else if (p.kind === 'offer' && p.restart && c.role === 'callee' && c.pc) {
-      // إعادة تفاوض بعد انقطاع الشبكة
-      await c.pc.setRemoteDescription(p.sdp);
-      await c.pc.setLocalDescription(await c.pc.createAnswer());
-      await waitIce(c.pc);
-      sendSig(c, { kind: 'answer', sdp: descOf(c.pc), restart: true });
-    } else if (p.kind === 'offer' && c.role === 'callee' && !c.gotOffer) {
-      c.gotOffer = true;
-      clearTimeout(c.readyTimer);
-      c.offer = p.sdp;
-      setCallStatus('وصلت بيانات الاتصال… جارٍ الرد');
-      if (c.stream && !c.answered) await makeAnswer(c);
-    } else if (p.kind === 'answer' && c.role === 'caller' && c.pc) {
-      c.gotAnswer = true;
-      setCallStatus('تم استلام الرد… جارٍ تبادل مسارات الشبكة');
-      await c.pc.setRemoteDescription(p.sdp);
-    } else if (p.kind === 'end') {
-      endCall(false);
-      toast('انتهت المكالمة');
-    }
+    c.iceCfg = await fetchIceConfig();
+    c.pc = makePC(c);
+    c.stream.getTracks().forEach(t => c.pc.addTrack(t, c.stream));
+    await c.pc.setRemoteDescription(c.offer);
+    await c.pc.setLocalDescription(await c.pc.createAnswer());
+    await waitIce(c.pc);
+    const { error } = await supabaseClient.from('calls').update({ status: 'answered', answer: descOf(c.pc) }).eq('id', c.id);
+    if (error) throw error;
+    setCallStatus('جارٍ الاتصال…');
   } catch (e) {
-    console.warn('call signal', e);
-    toast('تعذر إتمام المكالمة');
+    console.warn('accept call', e);
+    toast('تعذر الرد على المكالمة');
     endCall(true);
   }
-}
+};
+
+window.rejectCall = () => {
+  const c = call; if (!c) return;
+  if (c.id) supabaseClient.from('calls').update({ status: 'rejected' }).eq('id', c.id).then(() => {});
+  endCall(false);
+};
+
+window.endCall = (notify = true, status = 'ended') => {
+  const c = call; if (!c) return;
+  call = null;
+  clearTimeout(c.timeout);
+  clearInterval(c.timerIv);
+  clearInterval(callPollTimer);
+  if (notify && c.id) supabaseClient.from('calls').update({ status }).eq('id', c.id).then(() => {});
+  c.pc?.close();
+  c.stream?.getTracks().forEach(t => t.stop());
+  if (c.watchCh) { const ch = c.watchCh; setTimeout(() => supabaseClient.removeChannel(ch), 300); }
+  $('callOverlay')?.remove();
+};
 
 function makePC(c) {
   const pc = new RTCPeerConnection(c.iceCfg || RTC_CALL_CONFIG);
@@ -1292,42 +1325,14 @@ function makePC(c) {
   pc.onconnectionstatechange = () => {
     if (call !== c) return;
     const st = pc.connectionState;
-    if (st === 'connected') { c.connected = true; clearTimeout(c.disconnectTimer); setCallStatus('متصل'); startCallTimer(c); }
-    if (st === 'connecting') setCallStatus('جارٍ الاتصال…');
-    if (st === 'disconnected') {
-      setCallStatus('انقطع الاتصال… جارٍ الاستعادة');
-      c.disconnectTimer = setTimeout(() => { if (call === c) { toast('انقطع الاتصال'); endCall(true); } }, 8000);
-    }
-    if (st === 'failed') {
-      // محاولة استعادة الاتصال مرة واحدة عبر إعادة التفاوض (مفيد عند التنقل بين Wi-Fi وبيانات الهاتف)
-      if (c.role === 'caller' && !c.restartTried) { c.restartTried = true; restartCallIce(c); return; }
-      toast('تعذر الاتصال بين الجهازين. جرّب Wi-Fi أو شبكة أخرى');
-      endCall(true);
-    }
-  };
-  pc.oniceconnectionstatechange = () => {
-    if (call !== c) return;
-    const ice = pc.iceConnectionState;
-    if (ice === 'checking') setCallStatus('تبادل مسارات الشبكة…');
-    if (ice === 'failed') { toast('تعذر المرور عبر الشبكة. جرّب Wi-Fi أو شبكة أخرى'); endCall(true); }
+    if (st === 'connected') { c.connected = true; setCallStatus('متصل'); startCallTimer(c); }
+    if (st === 'disconnected') setCallStatus('انقطع الاتصال… جارٍ الاستعادة');
+    if (st === 'failed') { toast('تعذر الاتصال بين الجهازين. جرّب Wi-Fi أو شبكة أخرى'); endCall(true); }
   };
   return pc;
 }
 
-function startCallTimer(c) {
-  if (c.timerIv) return;
-  c.startedAt = Date.now();
-  const tick = () => {
-    const el = $('callTimer'); if (!el || call !== c) return;
-    const sec = Math.floor((Date.now() - c.startedAt) / 1000);
-    const mm = String(Math.floor(sec / 60)).padStart(2, '0'), ss = String(sec % 60).padStart(2, '0');
-    el.textContent = `${mm}:${ss}`;
-  };
-  tick();
-  c.timerIv = setInterval(tick, 1000);
-}
-
-// تشغيل صوت الطرف الآخر؛ إن منع المتصفح التشغيل التلقائي ننتظر أول نقرة للمستخدم
+// تشغيل صوت الطرف الآخر؛ إن منع المتصفح التشغيل التلقائي ننتظر أول نقرة
 function playRemoteAudio(a) {
   const p = a.play?.();
   if (!p) return;
@@ -1340,23 +1345,20 @@ function playRemoteAudio(a) {
   });
 }
 
-// إعادة إنشاء مسار الاتصال من جهة المتصل دون إنهاء المكالمة
-async function restartCallIce(c) {
-  if (call !== c || !c.pc) return;
-  try {
-    setCallStatus('جارٍ إعادة الاتصال…');
-    await c.pc.setLocalDescription(await c.pc.createOffer({ iceRestart: true }));
-    await waitIce(c.pc);
-    sendSig(c, { kind: 'offer', sdp: descOf(c.pc), restart: true });
-    // إن لم يتصل خلال 15 ثانية تنتهي المكالمة بوضوح
-    setTimeout(() => {
-      if (call === c && !c.connected) { toast('تعذر الاتصال بين الجهازين. جرّب Wi-Fi أو شبكة أخرى'); endCall(true); }
-    }, 15000);
-  } catch (e) {
-    console.warn('ice restart', e);
-    toast('تعذر الاتصال بين الجهازين. جرّب Wi-Fi أو شبكة أخرى');
-    endCall(true);
-  }
+function startCallTimer(c) {
+  if (c.timerIv) return;
+  c.startedAt = Date.now();
+  const tick = () => {
+    const el = $('callTimer'); if (!el || call !== c) return;
+    const sec = Math.floor((Date.now() - c.startedAt) / 1000);
+    el.textContent = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+  };
+  tick();
+  c.timerIv = setInterval(tick, 1000);
+}
+
+function descOf(pc) {
+  return { type: pc.localDescription.type, sdp: pc.localDescription.sdp };
 }
 
 function waitIce(pc) {
@@ -1368,49 +1370,6 @@ function waitIce(pc) {
     });
   });
 }
-
-async function makeAnswer(c) {
-  c.answered = true;
-  c.pc = makePC(c);
-  c.stream.getTracks().forEach(t => c.pc.addTrack(t, c.stream));
-  await c.pc.setRemoteDescription(c.offer);
-  await c.pc.setLocalDescription(await c.pc.createAnswer());
-  await waitIce(c.pc);
-  setCallStatus('تم إرسال الرد… جارٍ تبادل مسارات الشبكة');
-  sendSig(c, { kind: 'answer', sdp: descOf(c.pc) });
-}
-
-window.acceptCall = async () => {
-  const c = call; if (!c || c.role !== 'callee' || c.accepted) return;
-  c.accepted = true;
-  clearTimeout(c.timeout);
-  c.iceCfg = await fetchIceConfig();
-  try { c.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: c.isVideo }); }
-  catch (e) { toast('تعذر الوصول للميكروفون أو الكاميرا'); return rejectCall(); }
-  setCallStatus('بانتظار بيانات المتصل…');
-  showCallOverlay('بانتظار بيانات المتصل…', profileCache[c.peer] || { full_name: 'مستخدم' });
-  if (c.offer) await makeAnswer(c);
-};
-
-window.rejectCall = () => {
-  if (!call) return;
-  sendSig(call, { kind: 'end' });
-  endCall(false);
-};
-
-window.endCall = (notify = true) => {
-  const c = call; if (!c) return;
-  if (notify && c.pairCh) sendSig(c, { kind: 'end' });
-  call = null;
-  clearTimeout(c.timeout);
-  clearTimeout(c.readyTimer);
-  clearTimeout(c.disconnectTimer);
-  clearInterval(c.timerIv);
-  clearInterval(sigPollTimer);
-  c.pc?.close();
-  c.stream?.getTracks().forEach(t => t.stop());
-  $('callOverlay')?.remove();
-};
 
 function setCallStatus(t) { const el = $('callStatus'); if (el) el.textContent = t; }
 
