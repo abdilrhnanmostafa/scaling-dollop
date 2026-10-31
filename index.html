@@ -1156,8 +1156,22 @@ function listenForIncomingCalls() {
 }
 
 // توجيه صفوف الجدول: رنين جديد أو إشارة لمكالمة جارية
+const seenSigIds = new Set();
+let sigPollTimer = null;
+// احتياط: قراءة الإشارات من الجدول كل 1.5 ثانية أثناء المكالمة، إن فاتت Realtime أي صف
+function pollCallSignals(c) {
+  clearInterval(sigPollTimer);
+  sigPollTimer = setInterval(async () => {
+    if (call !== c) return clearInterval(sigPollTimer);
+    const { data } = await supabaseClient.from('call_signals').select('*')
+      .eq('to_user', me.id).eq('call_id', c.id).order('id', { ascending: true }).limit(50);
+    (data || []).forEach(onCallRow);
+  }, 1500);
+}
+
 function onCallRow(r) {
   if (!r || r.to_user !== me.id) return;
+  if (r.id != null) { if (seenSigIds.has(r.id)) return; seenSigIds.add(r.id); }
   if (r.kind === 'ring') {
     if (!call) onRing({ from: r.from_user, call_id: r.call_id, isVideo: !!r.payload?.isVideo, name: r.payload?.name });
     return;
@@ -1189,6 +1203,7 @@ async function onRing(p) {
     const { data } = await supabaseClient.from('profiles').select('*').eq('id', p.from).maybeSingle();
     if (data) profileCache[data.id] = data;
   }
+  pollCallSignals(c);
   showCallOverlay('مكالمة واردة…', profileCache[p.from] || { full_name: p.name || 'مستخدم' });
   c.pairCh = openPairChannel(c);
   c.timeout = setTimeout(() => { if (call === c && !c.accepted) { sendSig(c, { kind: 'end' }); endCall(false); } }, 45000);
@@ -1204,6 +1219,7 @@ window.startCall = async (isVideo) => {
   call = { id: pairIdOf(me.id, peer) + '_' + Date.now(), peer, isVideo: !!isVideo, role: 'caller', pc: null, stream,
            pairCh: null, accepted: true, connected: false, muted: false, camOff: false };
   const c = call;
+  pollCallSignals(c);
   c.iceCfg = await fetchIceConfig();
   if (!profileCache[peer]) {
     const { data } = await supabaseClient.from('profiles').select('*').eq('id', peer).maybeSingle();
@@ -1390,6 +1406,7 @@ window.endCall = (notify = true) => {
   clearTimeout(c.readyTimer);
   clearTimeout(c.disconnectTimer);
   clearInterval(c.timerIv);
+  clearInterval(sigPollTimer);
   c.pc?.close();
   c.stream?.getTracks().forEach(t => t.stop());
   $('callOverlay')?.remove();
@@ -2197,8 +2214,14 @@ const bgOf = r => r.background_url ? `linear-gradient(rgba(6,6,12,.5),rgba(6,6,1
   ? `linear-gradient(rgba(6,6,12,.5),rgba(6,6,12,.82)), url('${ROOM_BG[r.background_key]}') center/cover no-repeat`
   : coverOf(r);
 const avatarInner = m => m.avatar ? `<img src="${esc(m.avatar)}" alt="">` : esc((m.name || 'و').trim().charAt(0) || 'و');
-const collectMembers = state => Object.values(state).map(metas => metas[0]).filter(m => m && m.uid)
-  .sort((a, b) => (Number(b.owner) - Number(a.owner)) || String(a.name).localeCompare(String(b.name), 'ar'));
+// مفتاح فريد لكل جلسة حتى لا يطغى جهاز على آخر لنفس الحساب
+const SESSION_KEY = Math.random().toString(36).slice(2, 10);
+// دمج كل الأجهزة لكل مستخدم مرة واحدة
+const collectMembers = state => {
+  const byUid = new Map();
+  Object.values(state).forEach(metas => metas.forEach(m => { if (m && m.uid && !byUid.has(m.uid)) byUid.set(m.uid, m); }));
+  return [...byUid.values()].sort((a, b) => (Number(b.owner) - Number(a.owner)) || String(a.name).localeCompare(String(b.name), 'ar'));
+};
 const stackHtml = mem => mem.slice(0, 4).map(m => `<span class="rc-mini">${avatarInner(m)}</span>`).join('');
 const myMeta = () => ({
   uid: me.id, name: me.full_name || 'مستخدم', avatar: me.avatar_url || null, frame: me.frame || null,
@@ -2434,7 +2457,7 @@ window.joinRoom = async (roomId) => {
 
 function connectRoomChannel() {
   const st = rv;
-  const ch = supabaseClient.channel('voice-room-' + st.room.id, { config: { presence: { key: me.id } } });
+  const ch = supabaseClient.channel('voice-room-' + st.room.id, { config: { presence: { key: me.id + ':' + SESSION_KEY } } });
   st.ch = ch;
   ch.on('presence', { event: 'sync' }, () => { if (rv === st) onRoomPresence(ch.presenceState()); })
     .on('broadcast', { event: 'sig' }, ({ payload }) => { if (rv === st) onSignal(payload); })
@@ -2445,6 +2468,13 @@ function connectRoomChannel() {
     .subscribe(status => { if (status === 'SUBSCRIBED' && rv === st) { st.subscribed = true; trackMe(); } });
   st.reconcile = setInterval(() => { if (rv === st && st.subscribed) onRoomPresence(ch.presenceState()); }, 10000);
   st.retrack = setInterval(() => { if (rv === st && st.subscribed) trackMe(); }, 20000);
+  // عند عودة التطبيق للمقدمة (بعد قفل الشاشة مثلاً) نعيد إعلان الحضور فوراً
+  if (!window.__roomWake) {
+    window.__roomWake = true;
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && rv?.ch && rv.subscribed) { trackMe(); onRoomPresence(rv.ch.presenceState()); }
+    });
+  }
 }
 
 function trackMe() {
@@ -2637,7 +2667,18 @@ async function refreshMemberProfiles(uids) {
 }
 function onRoomPresence(state) {
   if (!rv) return;
-  rv.members = collectMembers(state);
+  const now = Date.now();
+  const live = collectMembers(state);
+  rv.lastSeen = rv.lastSeen || new Map();
+  live.forEach(m => rv.lastSeen.set(m.uid, { m, t: now }));
+  const liveIds = new Set(live.map(m => m.uid));
+  // من يختفي لحظة (انقطاع قصير أو قفل شاشة) يبقى ظاهراً 15 ثانية حتى لا يومض في القائمة
+  const ghosts = [];
+  for (const [uid, v] of [...rv.lastSeen]) {
+    if (liveIds.has(uid)) continue;
+    if (now - v.t < 15000) ghosts.push(v.m); else rv.lastSeen.delete(uid);
+  }
+  rv.members = [...live, ...ghosts];
   refreshMemberProfiles(rv.members.map(m => m.uid));
   if (rv.room.owner_id === me.id) {
     const seen = rv.seen || new Set();
