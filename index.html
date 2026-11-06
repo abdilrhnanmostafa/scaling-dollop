@@ -2216,9 +2216,14 @@ function showInfoModal(title, html) {
 window.openPolicyModal = () => showInfoModal('سياسة الخصوصية', POLICY_HTML);
 window.openSupportModal = () => showInfoModal('الدعم الفني', SUPPORT_HTML);
 window.openSettingsModal = () => {
-  $('modalRoot').innerHTML = `<div class="modal-overlay" onclick="closeModal()"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span>الإعدادات</span><button class="modal-close" onclick="closeModal()">${ico('x', 16)}</button></div><div style="display:flex;flex-direction:column;gap:10px"><button class="btn-save" onclick="openPolicyModal()">${ico('shield', 17)} سياسة الخصوصية</button><button class="btn-save" onclick="openSupportModal()">${ico('comment', 17)} الدعم الفني</button></div></div></div>`;
+  $('modalRoot').innerHTML = `<div class="modal-overlay" onclick="closeModal()"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span>الإعدادات</span><button class="modal-close" onclick="closeModal()">${ico('x', 16)}</button></div><div style="display:flex;flex-direction:column;gap:10px"><button class="btn-save" ${(!PUSH_SUPPORTED || Notification.permission !== 'default') ? 'disabled' : ''} onclick="enablePushFromSettings()">${ico('bell', 17)} ${!PUSH_SUPPORTED ? 'الإشعارات غير مدعومة في هذا المتصفح' : Notification.permission === 'granted' ? 'الإشعارات مفعّلة ✓' : Notification.permission === 'denied' ? 'الإشعارات محظورة من إعدادات المتصفح' : 'تفعيل الإشعارات'}</button><button class="btn-save" onclick="openPolicyModal()">${ico('shield', 17)} سياسة الخصوصية</button><button class="btn-save" onclick="openSupportModal()">${ico('comment', 17)} الدعم الفني</button></div></div></div>`;
 };
 window.openPrivacyModal = window.openSettingsModal;
+window.enablePushFromSettings = async () => {
+  try { localStorage.removeItem('wasl_push_dismissed'); } catch (e) {}
+  closeModal();
+  await enablePush();
+};
 
 
 // ================= VOICE ROOMS (الغرف الصوتية) =================
