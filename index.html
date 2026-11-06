@@ -424,7 +424,7 @@ textarea.form-input{resize:vertical}
 
 /* full-screen room */
 .room-view{position:fixed;inset:0;z-index:100003;background:#06060c;display:flex;flex-direction:column;overflow:hidden;color:#fff;animation:fadeIn .3s var(--ease)}
-.rv-bg{position:absolute;inset:-60px;opacity:.5;filter:blur(70px);pointer-events:none}
+.rv-bg{position:absolute;inset:0;opacity:1;filter:none;pointer-events:none;background-size:cover;background-position:center}
 .room-view>*:not(.rv-bg){position:relative;z-index:1}
 .rv-head{display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top)) 16px 10px}
 .rv-title{flex:1;min-width:0}
