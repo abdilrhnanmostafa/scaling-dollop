@@ -424,7 +424,7 @@ textarea.form-input{resize:vertical}
 
 /* full-screen room */
 .room-view{position:fixed;inset:0;z-index:100003;background:#06060c;display:flex;flex-direction:column;overflow:hidden;color:#fff;animation:fadeIn .3s var(--ease)}
-.rv-bg{position:absolute;inset:0;opacity:1;filter:none;pointer-events:none;background-size:cover;background-position:center}
+.rv-bg{position:absolute;inset:-60px;opacity:.5;filter:blur(70px);pointer-events:none}
 .room-view>*:not(.rv-bg){position:relative;z-index:1}
 .rv-head{display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top)) 16px 10px}
 .rv-title{flex:1;min-width:0}
@@ -617,11 +617,6 @@ textarea.form-input{resize:vertical}
 @keyframes introLoad{from{width:0}to{width:100%}}
 @keyframes introGlow{from{transform:scale(.9);opacity:.7}to{transform:scale(1.12);opacity:1}}
 @media (prefers-reduced-motion: reduce){.intro-splash *,.intro-splash{animation:none!important;transition:none!important}}
-.top-banner{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:12px;right:12px;z-index:100010;background:rgba(24,24,40,.97);border:1px solid var(--border-2);border-radius:18px;padding:12px 16px;color:#fff;box-shadow:0 12px 40px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:2px;animation:bannerDown .35s var(--ease);cursor:pointer;direction:rtl;transition:opacity .4s,transform .4s}
-.top-banner b{font-size:14px}
-.top-banner span{font-size:13px;color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.top-banner.out{opacity:0;transform:translateY(-20px)}
-@keyframes bannerDown{from{transform:translateY(-130%);opacity:0}to{transform:none;opacity:1}}
 </style>
 </head>
 <body>
@@ -1148,65 +1143,6 @@ async function fetchIceConfig() {
   }
 }
 let call = null, callCh = null, callPollTimer = null;
-let ringCtx = null, ringTimer = null, ringAudio = null;
-// رابط اختياري لملف mp3 لجرس المكالمة الواردة (ضع الرابط هنا)
-const RING_URL = '';
-function ringCtxGet() {
-  try {
-    if (!ringCtx) ringCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (ringCtx.state === 'suspended') ringCtx.resume();
-    return ringCtx;
-  } catch (e) { return null; }
-}
-// فتح الصوت من أول نقرة حتى يسمح المتصفح بتشغيل الجرس لاحقاً
-document.addEventListener('pointerdown', () => ringCtxGet(), { once: true });
-function ringTone(ctx, freq, start, dur, vol) {
-  const o = ctx.createOscillator(), g = ctx.createGain();
-  const t = ctx.currentTime + start;
-  o.type = 'sine'; o.frequency.value = freq;
-  g.gain.setValueAtTime(0, t);
-  g.gain.linearRampToValueAtTime(vol, t + 0.03);
-  g.gain.setValueAtTime(vol, t + dur - 0.05);
-  g.gain.linearRampToValueAtTime(0, t + dur);
-  o.connect(g).connect(ctx.destination);
-  o.start(t); o.stop(t + dur + 0.05);
-}
-// الوارد: نغمتان مزدوجتان كل 3 ثوانٍ مع اهتزاز. الصادر: نغمة الانتظار 425 هرتز كل 5 ثوانٍ
-function startRingtone(kind) {
-  stopRingtone();
-  if (kind === 'incoming' && RING_URL) {
-    ringAudio = new Audio(RING_URL);
-    ringAudio.loop = true;
-    ringAudio.play().catch(() => {});
-  } else {
-    const ctx = ringCtxGet();
-    if (!ctx) return;
-    const cycle = () => {
-      if (kind === 'incoming') {
-        if (navigator.vibrate) navigator.vibrate([400, 200, 400]);
-        ringTone(ctx, 440, 0, 0.9, 0.2); ringTone(ctx, 480, 0, 0.9, 0.2);
-        ringTone(ctx, 440, 1.2, 0.9, 0.2); ringTone(ctx, 480, 1.2, 0.9, 0.2);
-      } else {
-        ringTone(ctx, 425, 0, 1.0, 0.15);
-      }
-    };
-    cycle();
-    ringTimer = setInterval(cycle, kind === 'incoming' ? 3000 : 5000);
-  }
-  if (kind === 'incoming' && navigator.vibrate && !ringTimer) ringTimer = setInterval(() => navigator.vibrate([400, 200, 400]), 3000);
-}
-function stopRingtone() {
-  clearInterval(ringTimer); ringTimer = null;
-  if (ringAudio) { ringAudio.pause(); ringAudio = null; }
-  if (navigator.vibrate) navigator.vibrate(0);
-}
-const callLines = [];
-function callLog(m) {
-  const line = new Date().toLocaleTimeString('ar-EG') + ' ' + m;
-  console.log('[call]', line);
-  callLines.push(line);
-  if (callLines.length > 40) callLines.shift();
-}
 const callSeen = new Set();
 const CALL_TIMEOUT_MS = 45000;
 
@@ -1262,8 +1198,6 @@ function onIncomingCall(row) {
   const c = { id: row.id, peer: row.caller_id, isVideo: !!row.is_video, role: 'callee', offer: row.offer,
               pc: null, stream: null, accepted: false, connected: false, muted: false, camOff: false };
   call = c;
-  callLog('مكالمة واردة من المتصل');
-  startRingtone('incoming');
   watchCallRow(c);
   ensureCallProfile(c.peer).then(() => {
     if (call === c) showCallOverlay('مكالمة واردة…', profileCache[c.peer] || { full_name: 'مستخدم' });
@@ -1276,13 +1210,11 @@ async function onCallRowUpdate(c, row) {
   if (c.role === 'caller') {
     if (row.answer && !c.gotAnswer && c.pc) {
       c.gotAnswer = true;
-      callLog('وصل رد المستقبل');
-      stopRingtone();
       setCallStatus('تم استلام الرد… جارٍ الاتصال');
       try { await c.pc.setRemoteDescription(row.answer); }
       catch (e) { console.warn('set answer', e); toast('تعذر إتمام الاتصال'); endCall(true); return; }
     }
-    if (row.status === 'rejected') { callLog('رفض المستقبل'); toast('رفض المستخدم المكالمة'); endCall(false); }
+    if (row.status === 'rejected') { toast('رفض المستخدم المكالمة'); endCall(false); }
     else if (row.status === 'missed' || row.status === 'ended') { toast('انتهت المكالمة'); endCall(false); }
   } else if (row.status === 'ended' || row.status === 'missed') {
     toast('انتهت المكالمة');
@@ -1313,7 +1245,6 @@ window.startCall = async (isVideo) => {
       .insert({ caller_id: me.id, callee_id: peer, is_video: !!isVideo, status: 'ringing', offer: descOf(c.pc) })
       .select('id').single();
     if (error) throw error;
-    callLog('تم إنشاء المكالمة في قاعدة البيانات');
     if (call !== c) { // أُلغيت المكالمة أثناء التجهيز
       await supabaseClient.from('calls').update({ status: 'ended' }).eq('id', data.id);
       return;
@@ -1321,14 +1252,11 @@ window.startCall = async (isVideo) => {
     c.id = data.id;
   } catch (e) {
     console.warn('call start', e);
-    callLog('فشل إنشاء المكالمة: ' + (e.message || e));
     toast('تعذر بدء المكالمة: ' + (e.message || 'خطأ غير معروف'));
     endCall(false);
     return;
   }
   watchCallRow(c);
-  callLog('بانتظار الرد');
-  startRingtone('outgoing');
   setCallStatus('يرنّ…');
   c.timeout = setTimeout(() => {
     if (call === c && !c.gotAnswer && !c.connected) { toast('لم يرد المستخدم'); endCall(true, 'missed'); }
@@ -1338,7 +1266,6 @@ window.startCall = async (isVideo) => {
 window.acceptCall = async () => {
   const c = call; if (!c || c.role !== 'callee' || c.accepted) return;
   c.accepted = true;
-  stopRingtone();
   clearTimeout(c.timeout);
   renderCallControls();
   setCallStatus('جارٍ الرد…');
@@ -1355,11 +1282,9 @@ window.acceptCall = async () => {
     await waitIce(c.pc);
     const { error } = await supabaseClient.from('calls').update({ status: 'answered', answer: descOf(c.pc) }).eq('id', c.id);
     if (error) throw error;
-    callLog('تم إرسال الرد إلى قاعدة البيانات');
     setCallStatus('جارٍ الاتصال…');
   } catch (e) {
     console.warn('accept call', e);
-    callLog('فشل إرسال الرد: ' + (e.message || e));
     toast('تعذر الرد على المكالمة');
     endCall(true);
   }
@@ -1367,7 +1292,6 @@ window.acceptCall = async () => {
 
 window.rejectCall = () => {
   const c = call; if (!c) return;
-  stopRingtone();
   if (c.id) supabaseClient.from('calls').update({ status: 'rejected' }).eq('id', c.id).then(() => {});
   endCall(false);
 };
@@ -1375,7 +1299,6 @@ window.rejectCall = () => {
 window.endCall = (notify = true, status = 'ended') => {
   const c = call; if (!c) return;
   call = null;
-  stopRingtone();
   clearTimeout(c.timeout);
   clearInterval(c.timerIv);
   clearInterval(callPollTimer);
@@ -1390,7 +1313,6 @@ function makePC(c) {
   const pc = new RTCPeerConnection(c.iceCfg || RTC_CALL_CONFIG);
   pc.ontrack = e => {
     const stream = e.streams[0] || new MediaStream([e.track]);
-    callLog('وصل مسار ' + e.track.kind + ' من الطرف الآخر');
     if (e.track.kind === 'audio') {
       const a = $('callAudio');
       if (a) { a.srcObject = stream; playRemoteAudio(a); }
@@ -1400,11 +1322,9 @@ function makePC(c) {
       if ($('callVoice')) $('callVoice').style.display = 'none';
     }
   };
-  pc.oniceconnectionstatechange = () => callLog('ICE: ' + pc.iceConnectionState);
   pc.onconnectionstatechange = () => {
     if (call !== c) return;
     const st = pc.connectionState;
-    callLog('حالة الاتصال: ' + st);
     if (st === 'connected') { c.connected = true; setCallStatus('متصل'); startCallTimer(c); }
     if (st === 'disconnected') setCallStatus('انقطع الاتصال… جارٍ الاستعادة');
     if (st === 'failed') { toast('تعذر الاتصال بين الجهازين. جرّب Wi-Fi أو شبكة أخرى'); endCall(true); }
@@ -1475,7 +1395,6 @@ function showCallOverlay(status, peer) {
       <video id="callLocal" autoplay playsinline muted ${vid ? '' : 'style="display:none"'}></video>
       <audio id="callAudio" autoplay playsinline></audio>
     </div>
-    
     <div class="call-controls" id="callControls"></div>`;
   if (c?.stream && vid) { const lv = $('callLocal'); if (lv) lv.srcObject = c.stream; }
   renderCallControls();
@@ -2218,14 +2137,9 @@ function showInfoModal(title, html) {
 window.openPolicyModal = () => showInfoModal('سياسة الخصوصية', POLICY_HTML);
 window.openSupportModal = () => showInfoModal('الدعم الفني', SUPPORT_HTML);
 window.openSettingsModal = () => {
-  $('modalRoot').innerHTML = `<div class="modal-overlay" onclick="closeModal()"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span>الإعدادات</span><button class="modal-close" onclick="closeModal()">${ico('x', 16)}</button></div><div style="display:flex;flex-direction:column;gap:10px"><button class="btn-save" ${(!PUSH_SUPPORTED || Notification.permission !== 'default') ? 'disabled' : ''} onclick="enablePushFromSettings()">${ico('bell', 17)} ${!PUSH_SUPPORTED ? 'الإشعارات غير مدعومة في هذا المتصفح' : Notification.permission === 'granted' ? 'الإشعارات مفعّلة ✓' : Notification.permission === 'denied' ? 'الإشعارات محظورة من إعدادات المتصفح' : 'تفعيل الإشعارات'}</button><button class="btn-save" onclick="openPolicyModal()">${ico('shield', 17)} سياسة الخصوصية</button><button class="btn-save" onclick="openSupportModal()">${ico('comment', 17)} الدعم الفني</button></div></div></div>`;
+  $('modalRoot').innerHTML = `<div class="modal-overlay" onclick="closeModal()"><div class="modal-content" onclick="event.stopPropagation()"><div class="modal-header"><span>الإعدادات</span><button class="modal-close" onclick="closeModal()">${ico('x', 16)}</button></div><div style="display:flex;flex-direction:column;gap:10px"><button class="btn-save" onclick="openPolicyModal()">${ico('shield', 17)} سياسة الخصوصية</button><button class="btn-save" onclick="openSupportModal()">${ico('comment', 17)} الدعم الفني</button></div></div></div>`;
 };
 window.openPrivacyModal = window.openSettingsModal;
-window.enablePushFromSettings = async () => {
-  try { localStorage.removeItem('wasl_push_dismissed'); } catch (e) {}
-  closeModal();
-  await enablePush();
-};
 
 
 // ================= VOICE ROOMS (الغرف الصوتية) =================
@@ -3214,22 +3128,10 @@ if ('serviceWorker' in navigator) {
       playNotifySound();
       const d = m.data || {};
       if (d.type === 'message' && d.from === currentChatUser) return; // المحادثة مفتوحة أمامك
-      showTopBanner(m.title, m.body, d);
+      toast(`${m.title}: ${m.body}`);
       if (d.type !== 'message' || !currentChatUser) $('notifDot')?.classList.remove('hidden');
     }
   });
-}
-
-// إشعار يظهر أعلى التطبيق مثل تطبيقات الهاتف، والضغط عليه يفتح المكان المناسب
-function showTopBanner(title, body, data) {
-  document.querySelectorAll('.top-banner').forEach(x => x.remove());
-  const b = document.createElement('div');
-  b.className = 'top-banner';
-  b.innerHTML = `<b>${esc(title || 'WASL')}</b><span>${esc(body || '')}</span>`;
-  b.onclick = () => { b.remove(); handlePushNav(data); };
-  document.body.appendChild(b);
-  setTimeout(() => b.classList.add('out'), 4200);
-  setTimeout(() => b.remove(), 4700);
 }
 
 function handlePushNav(d) {
