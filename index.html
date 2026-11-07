@@ -622,6 +622,9 @@ textarea.form-input{resize:vertical}
 .top-banner span{font-size:13px;color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .top-banner.out{opacity:0;transform:translateY(-20px)}
 @keyframes bannerDown{from{transform:translateY(-130%);opacity:0}to{transform:none;opacity:1}}
+html,body{overscroll-behavior-y:none;overscroll-behavior:none}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 </style>
 </head>
 <body>
@@ -1160,6 +1163,12 @@ function ringCtxGet() {
 }
 // فتح الصوت من أول نقرة حتى يسمح المتصفح بتشغيل الجرس لاحقاً
 document.addEventListener('pointerdown', () => ringCtxGet(), { once: true });
+// منع النسخ والتحديد والقائمة المنبثقة خارج حقول الكتابة
+['copy', 'cut', 'contextmenu', 'selectstart'].forEach(ev => document.addEventListener(ev, e => {
+  if (!e.target.closest || !e.target.closest('input,textarea,[contenteditable="true"]')) e.preventDefault();
+}));
+
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') navigator.clearAppBadge?.().catch(() => {}); });
 function ringTone(ctx, freq, start, dur, vol) {
   const o = ctx.createOscillator(), g = ctx.createGain();
   const t = ctx.currentTime + start;
@@ -2483,6 +2492,7 @@ window.joinRoom = async (roomId) => {
   rv = { room, ch: null, pcs: new Map(), audios: new Map(), pending: new Map(), stream: null,
          muted: forced, forcedMute: forced, speaking: false, members: [], vad: null, actx: null, lastTrack: 0, subscribed: false };
   roomChatMsgs = [];
+  try { const nk = 'roomnotif-' + room.id; if (!sessionStorage.getItem(nk)) { sessionStorage.setItem(nk, '1'); supabaseClient.rpc('notify_room_join', { p_room: room.id }).then(() => {}, () => {}); } } catch (e) {}
   renderRoomView();
   supabaseClient.from('voice_rooms').select('title, background_key, background_url, music_url, music_started_at').eq('id', room.id).maybeSingle()
     .then(({ data: fresh }) => { if (fresh && rv && rv.room.id === room.id) applyRoomState(fresh); });
@@ -3205,6 +3215,21 @@ function urlB64ToUint8Array(b64) {
 const withTimeout = (p, ms = 4000) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
 async function getReg() { return swReg || await withTimeout(navigator.serviceWorker.ready); }
 
+(function openFromPushParams() {
+  try {
+    const p = new URLSearchParams(location.search);
+    const n = p.get('n'); if (!n) return;
+    const d = { type: n, from: p.get('from') || null, room: p.get('room') || null };
+    history.replaceState(null, '', location.pathname);
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries++;
+      if (me) { clearInterval(iv); handlePushNav(d); }
+      else if (tries > 150) clearInterval(iv);
+    }, 200);
+  } catch (e) {}
+})();
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').then(r => { swReg = r; }).catch(e => console.warn('SW:', e));
   navigator.serviceWorker.addEventListener('message', e => {
@@ -3234,6 +3259,7 @@ function showTopBanner(title, body, data) {
 
 function handlePushNav(d) {
   if (!d || !me) return;
+  if (d.type === 'room' && d.room) return joinRoom(d.room);
   if (d.type === 'message' && d.from) return goToChat(d.from);
   if (d.type === 'friend_request' || d.type === 'friend_accept') return document.querySelector('.mobile-nav [data-page=friends], .sidebar [data-page=friends]')?.click();
   if (d.type === 'like' || d.type === 'comment') return openNotifications();

@@ -18,12 +18,13 @@ self.addEventListener('push', event => {
     dir: 'rtl',
     lang: 'ar',
     silent: false,
-    requireInteraction: false,
+    requireInteraction: ['message', 'room'].includes((p.data || {}).type),
     vibrate: [200, 100, 200, 100, 200],
     timestamp: Date.now()
   };
 
   event.waitUntil((async () => {
+    if (self.navigator && self.navigator.setAppBadge) self.navigator.setAppBadge(p.badge || 1).catch(() => {});
     const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     const focused = wins.find(c => c.visibilityState === 'visible' && c.focused);
     if (focused) {
@@ -38,6 +39,7 @@ self.addEventListener('push', event => {
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   const data = event.notification.data || {};
+  if (self.navigator && self.navigator.clearAppBadge) self.navigator.clearAppBadge().catch(() => {});
   event.waitUntil((async () => {
     const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const c of wins) {
@@ -47,7 +49,7 @@ self.addEventListener('notificationclick', event => {
         return;
       }
     }
-    const q = new URLSearchParams({ n: data.type || '', from: data.from || '' });
+    const q = new URLSearchParams({ n: data.type || '', from: data.from || '', room: data.room || '' });
     await self.clients.openWindow('./?' + q.toString());
   })());
 });
